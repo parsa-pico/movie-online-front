@@ -14,7 +14,7 @@ export default function VideoScene() {
   const [srtText, setSrtText] = useState(null);
   const location = useLocation();
   const { socket, connectSocket } = useSocket();
-  const [link, setLink] = useState("/test.mp4");
+  const [link, setLink] = useState("");
   const [videoSrc, setVideoSrc] = useState(link);
   const videoRef = useRef(null);
   const [currentTime, setCurrentTime] = useState(0);
