@@ -84,3 +84,6 @@ export function secondsToTime(seconds, maxSeconds) {
     return `${formattedMinutes}:${formattedSeconds}`;
   }
 }
+export function isEmptyObj(obj) {
+  return Object.keys(obj).length === 0;
+}

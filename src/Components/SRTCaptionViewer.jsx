@@ -1,10 +1,42 @@
 import React, { useState, useEffect } from "react";
+import { isEmptyObj } from "../Common/commonFuncs";
 
-const SRTCaptionViewer = ({ srtText, videoRef }) => {
-  const [captions, setCaptions] = useState([]);
-  const [captionsMap, setCaptionsMap] = useState({});
-  const [currentCaption, setCurrentCaption] = useState("");
+const SRTCaptionViewer = ({
+  srtText,
+  videoRef,
+  subDelay,
+  captionsMapState,
+  currentCaptionState,
+  currentTime,
+}) => {
+  const [captionsMap, setCaptionsMap] = captionsMapState;
+  const [currentCaption, setCurrentCaption] = currentCaptionState;
 
+  function handleCaption() {
+    const captionToShow = captionsMap[Math.floor(currentTime)];
+    console.log(Math.floor(currentTime));
+    setCurrentCaption(captionToShow);
+  }
+
+  useEffect(() => {
+    if (!isEmptyObj(captionsMap)) handleCaption();
+  }, [captionsMap, currentTime]);
+
+  useEffect(() => {
+    if (subDelay === 0 || isEmptyObj(captionsMap)) return;
+
+    const capMap = {};
+    for (let key in captionsMap) {
+      const { startTime, endTime, text } = captionsMap[key];
+      capMap[key] = {
+        startTime: startTime + subDelay,
+        endTime: endTime + subDelay,
+        text,
+      };
+    }
+    // console.log(capMap[1]);
+    setCaptionsMap(capMap);
+  }, [subDelay]);
   useEffect(() => {
     const parseSRT = (srtText) => {
       const captionBlocks = srtText.split("\r\n\r\n");
@@ -13,13 +45,14 @@ const SRTCaptionViewer = ({ srtText, videoRef }) => {
         try {
           const [_, time, ...textLines] = block.split("\r\n").filter(Boolean);
 
-          const [startTime, endTime] = time.split(" --> ").map(parseTime);
-
+          let [startTime, endTime] = time.split(" --> ").map(parseTime);
+          startTime = Math.floor(startTime);
+          endTime = Math.ceil(endTime);
           const text = textLines.join("<br/>");
           return { startTime, endTime, text };
         } catch (error) {
           console.log(error);
-          return { startTime: Infinity, endTime: Infinity + 1, text: "" };
+          return { startTime: null, endTime: null, text: "" };
         }
       });
 
@@ -39,59 +72,33 @@ const SRTCaptionViewer = ({ srtText, videoRef }) => {
     try {
       const captionsData = parseSRT(srtText);
 
-      setCaptions(captionsData);
-
       const capMap = {};
       captionsData.forEach((caption) => {
         const start = Math.floor(caption.startTime);
         const end = Math.ceil(caption.endTime);
-        for (let i = start; i <= end; i++) {
-          capMap[i] = caption;
+        if (start && end) {
+          for (let i = start; i <= end; i++) {
+            capMap[i] = caption;
+          }
         }
       });
+
       setCaptionsMap(capMap);
     } catch (error) {
-      setCaptions([]);
+      setCaptionsMap({});
       setCurrentCaption("");
       console.log(error);
       alert("فایل زیر نویس مشکل دارد");
     }
   }, [srtText]);
 
-  useEffect(() => {
-    function handleTimeUpdate() {
-      const currentTime = videoRef.current.currentTime;
-      // const currentCaption = captions.find(
-      //   (caption) =>
-      //     currentTime >= caption.startTime && currentTime <= caption.endTime
-      // );
-      let left = 0;
-      let right = captions.length - 1;
-      let mid;
-
-      while (left <= right) {
-        mid = Math.floor((left + right) / 2);
-        if (
-          captions[mid].startTime <= currentTime &&
-          captions[mid].endTime >= currentTime
-        ) {
-          setCurrentCaption(captions[mid]);
-          return;
-        } else if (captions[mid].startTime < currentTime) {
-          left = mid + 1;
-        } else {
-          right = mid - 1;
-        }
-      }
-
-      setCurrentCaption(currentCaption);
-    }
-    if (captions.length !== 0)
-      videoRef.current.addEventListener("timeupdate", handleTimeUpdate);
-    return () => {
-      videoRef.current.removeEventListener("timeupdate", handleTimeUpdate);
-    };
-  }, [videoRef, captions]);
+  // useEffect(() => {
+  //   if (Object.keys(captionsMap).length != 0)
+  //     videoRef.current.addEventListener("timeupdate", handleTimeUpdate);
+  //   return () => {
+  //     videoRef.current.removeEventListener("timeupdate", handleTimeUpdate);
+  //   };
+  // }, [videoRef, captionsMap]);
 
   return (
     currentCaption && (

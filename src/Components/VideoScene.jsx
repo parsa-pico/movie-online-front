@@ -30,6 +30,9 @@ export default function VideoScene() {
   const [cacheAmount, setCacheAmount] = useState(0);
   const [chooseFromFile, setChooseFromFile] = useState(true);
   const [videoFile, setVideoFile] = useState(null);
+  const [subDelay, setSubDelay] = useState(0);
+  const [captionsMap, setCaptionsMap] = useState({});
+  const [currentCaption, setCurrentCaption] = useState("");
   const handleReloadVideo = () => {
     setVideoKey((prevKey) => prevKey + 1);
   };
@@ -122,6 +125,13 @@ export default function VideoScene() {
       window.removeEventListener("keydown", preventSpace);
     };
   }, []);
+  function infoToast(msg, autoClose = 1500) {
+    toast.info(msg, {
+      autoClose,
+      position: "top-left",
+      theme: "dark",
+    });
+  }
   function removeSocketlisteners(...listeners) {
     listeners.forEach((l) => socket.removeAllListeners(l));
   }
@@ -215,7 +225,15 @@ export default function VideoScene() {
     setIsPlaying(newState);
     sendTime(newState);
   }
+  function handleSubDelay(delay) {
+    const totalDelay = subDelay + delay;
+    setSubDelay(totalDelay);
+    infoToast(`subtitle delay : ${totalDelay}`, 1000);
+    socket.emit("subDelay", totalDelay);
+  }
   function handleKeyDown(e) {
+    const subDelayRate = 5;
+
     if (keysEnabled) {
       const { code } = e;
       console.log(code);
@@ -224,6 +242,8 @@ export default function VideoScene() {
         setShowControls(!showControls);
       } else if (code === "ArrowRight") goToNext(5);
       else if (code === "ArrowLeft") goToNext(-5);
+      else if (code === "Period") handleSubDelay(subDelayRate);
+      else if (code === "Comma") handleSubDelay(-subDelayRate);
     }
   }
   function submitMovieSrc() {
@@ -370,7 +390,16 @@ export default function VideoScene() {
             }}
           />
         </div>
-        {srtText && <SRTCaptionViewer videoRef={videoRef} srtText={srtText} />}
+        {srtText && (
+          <SRTCaptionViewer
+            currentTime={currentTime}
+            subDelay={subDelay}
+            videoRef={videoRef}
+            srtText={srtText}
+            captionsMapState={[captionsMap, setCaptionsMap]}
+            currentCaptionState={[currentCaption, setCurrentCaption]}
+          />
+        )}
         <ToastContainer />
       </div>
     </div>
