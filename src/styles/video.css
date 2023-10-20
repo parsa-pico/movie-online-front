@@ -1,11 +1,66 @@
+#video-page {
+  display: flex;
+  flex-direction: column;
+  padding: 0 5rem;
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+  direction: rtl;
+  height: 100%;
+  position: relative;
+  background: black;
+  /* background: linear-gradient(
+    21deg,
+    rgba(33, 43, 17, 1) 5%,
+    rgba(37, 31, 33, 1) 47%,
+    rgba(53, 18, 57, 1) 100%
+  ); */
+
+  /* background-size: 400% 400%; */
+  color: white;
+  /* animation: gradient 20s ease infinite; */
+}
+.video-back {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+}
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 #video-container {
   position: relative;
   width: fit-content !important;
+  margin-top: 2rem;
+  background-color: black;
+  display: flex;
+  justify-content: center;
 }
+
 #my-video {
-  width: 100%;
+  /* width: 100%; */
+  /* box-shadow: 0 0 0px 1px white; */
+  max-width: 100%;
+  height: auto;
+  border: 1px solid white;
+}
+#video-container:focus-visible {
+  border: none;
+  outline: none;
+}
+#my-video.full {
+  border: none;
 }
 .controls {
+  direction: ltr;
   background: rgb(0, 0, 0);
   background: linear-gradient(
     360deg,
@@ -19,6 +74,7 @@
   width: 100%;
   bottom: 0%;
   left: 0;
+  right: 0;
   z-index: 2;
   display: flex;
   flex-direction: column;
@@ -37,13 +93,11 @@
   flex-direction: row;
   width: 100%;
   justify-content: space-between;
+  margin-bottom: 1rem;
 }
 .btn-play {
   cursor: pointer;
-  margin-bottom: 1rem;
-  font-size: 2rem;
-  width: 40px;
-  height: 40px;
+
   filter: invert(97%) sepia(19%) saturate(10%) hue-rotate(336deg)
     brightness(103%) contrast(102%);
 }
@@ -57,11 +111,16 @@
 .video-range {
   cursor: pointer;
 }
-.control-time {
+.control-time-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
   color: white;
   margin-bottom: 1rem;
   pointer-events: none;
 }
+
 .caption {
   direction: rtl;
   text-align: center;
@@ -83,4 +142,39 @@
 }
 .controls.hide + .caption {
   bottom: 10%;
+}
+.video-configs {
+  width: 50%;
+}
+.key-enable {
+  margin: 1rem 0;
+}
+@media screen and (max-width: 1024px) {
+  .video-configs {
+    width: 100%;
+  }
+  .key-enable {
+    margin: 4rem 0;
+  }
+  .controls {
+    padding-top: 0;
+  }
+  .icon-sm {
+    --size: 15px;
+    width: var(--size);
+    height: var(--size);
+  }
+  .control-time {
+    font-size: 1rem;
+    margin-bottom: 0.2rem;
+  }
+  .upper-contorls {
+    margin-bottom: 0.4rem;
+  }
+  #video-page {
+    padding: 3rem 1rem;
+  }
+  .caption h3 {
+    font-size: 1rem;
+  }
 }

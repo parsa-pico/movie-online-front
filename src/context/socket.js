@@ -9,9 +9,8 @@ export const SocketProvider = ({ children }) => {
     const newSocket = io(SOCKET_URL, { autoConnect: false });
     setSocket(newSocket);
   }
-  const connectSocket = async (callback) => {
+  const connectSocket = async () => {
     await socket.connect();
-    callback();
   };
 
   return (

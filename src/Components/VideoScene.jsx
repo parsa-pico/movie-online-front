@@ -6,87 +6,114 @@ import { useLocation } from "react-router-dom";
 import playIcon from "../icons/play.svg";
 import pauseIcon from "../icons/pause.svg";
 import fullScreenIcon from "../icons/fullscreen.svg";
-import { secondsToTime, toggleFullScreen } from "../Common/commonFuncs";
+import { secondsToTime } from "../Common/commonFuncs";
 import SRTCaptionViewer from "./SRTCaptionViewer";
 import { toast, ToastContainer } from "react-toastify";
+import Switch from "react-switch";
+import ReactPlayer from "react-player";
 
 export default function VideoScene() {
   const [srtText, setSrtText] = useState(null);
   const location = useLocation();
   const { socket, connectSocket } = useSocket();
-  const [link, setLink] = useState("");
+  const [link, setLink] = useState("/test.mkv");
   const [videoSrc, setVideoSrc] = useState(link);
   const videoRef = useRef(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [videoKey, setVideoKey] = useState(0);
-  const isPlaying = useRef(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [showedTime, setShowedTime] = useState(0);
-  const videoFocused = useRef(false);
+  const [keysEnabled, setKeysEnabled] = useState(true);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [cacheAmount, setCacheAmount] = useState(0);
   const handleReloadVideo = () => {
     setVideoKey((prevKey) => prevKey + 1);
   };
 
-  // useEffect(() => {
-  //   async function run() {
-  //     console.log("hi");
-  //     if (isPlaying.current) await videoRef.current.play();
-  //     else videoRef.current.pause();
-  //   }
-  //   run();
-  // }, [isPlaying.current]);
-
   useEffect(() => {
-    handleControlsWidth();
+    const video = videoRef.current;
+    video.currentTime = 0;
+    video.pause();
   }, [videoKey]);
-
   useEffect(() => {
-    window.addEventListener("resize", handleControlsWidth);
+    async function run() {
+      if (isPlaying) await videoRef.current.play();
+      else await videoRef.current.pause();
+    }
+    run();
+  }, [isPlaying]);
 
-    connectSocket(() => {
+  // useEffect(() => {
+  //   handleControlsWidth();
+  // }, [videoKey, isFullScreen]);
+  function defaultToast(msg, timeout = 1000) {
+    toast(msg, { autoClose: timeout, rtl: true });
+  }
+  useEffect(() => {
+    async function run() {
+      // window.addEventListener("resize", handleControlsWidth);
+      await connectSocket();
       socket.on("connect", () => {
         console.log("connected to server");
-        toast("اتصال شما برقرار است");
+        defaultToast("اتصال شما برقرار است");
       });
+
       socket.on("disconnect ", () => {
-        toast("اتصال شما قطع شده است");
+        defaultToast("اتصال شما قطع شده است");
       });
-      socket.emit("joinRoom", location.pathname);
-      socket.on("time", async (time, t1, isPlaying) => {
+      socket.emit(
+        "joinRoom",
+        location.pathname,
+        (location.state && location.state.name) || "کاربر مهمان"
+      );
+      socket.on("time", async (time, t1, playing) => {
         console.log("a user changed time");
         const videoElement = videoRef.current;
 
-        if (isPlaying) setIsPlaying(true);
+        if (playing) setIsPlaying(true);
         else setIsPlaying(false);
 
         const t2 = Date.now();
-        const delay = isPlaying.current ? (t2 - t1) / 1000.0 : 0;
+        const delay = playing ? (t2 - t1) / 1000.0 : 0;
 
         videoElement.currentTime = time + delay;
       });
       socket.on("alert", (msg) => {
-        toast(msg, { rtl: true, autoClose: 1000 });
+        defaultToast(msg);
       });
-    });
 
-    setInterval(() => {
-      if (!socket.connected) toast("اتصال شما قطع شده است");
-    }, 5000);
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("click", handleVideoFocus);
+      setInterval(() => {
+        if (!socket.connected) defaultToast("اتصال شما قطع شده است");
+      }, 10000);
+    }
+
+    run();
+
     return () => {
-      if (socket) socket.removeAllListeners();
-      window.removeEventListener("resize", handleControlsWidth);
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("handleVideoFocus", handleKeyDown);
+      if (socket) {
+        removeSocketlisteners("alert", "connect", "disconnet", "time");
+
+        socket.disconnect();
+      }
+      // window.removeEventListener("resize", handleControlsWidth);
     };
   }, []);
-  function handleVideoFocus(e) {
-    if (e.target.id === "my-video") {
-      videoFocused.current = true;
-    } else videoFocused.current = false;
+  useEffect(() => {
+    function preventSpace(e) {
+      if (e.keyCode == 32 && e.target.id === "video-container") {
+        e.preventDefault();
+      }
+    }
+    window.addEventListener("keydown", preventSpace);
+    return () => {
+      window.removeEventListener("keydown", preventSpace);
+    };
+  }, []);
+  function removeSocketlisteners(...listeners) {
+    listeners.forEach((l) => socket.removeAllListeners(l));
   }
-  function sendTime(playing = isPlaying.current) {
+  function sendTime(playing = isPlaying) {
     if (socket) {
       const targetTime = videoRef.current.currentTime;
       console.log("you changed time");
@@ -102,8 +129,6 @@ export default function VideoScene() {
     const newTime = e.target.value;
     videoRef.current.currentTime = newTime;
     setTime(newTime);
-
-    sendTime();
   };
 
   const handleTimeUpdate = () => {
@@ -111,19 +136,33 @@ export default function VideoScene() {
   };
 
   function handleControlsWidth() {
-    const videoElement = videoRef.current;
+    // const videoElement = videoRef.current;
+    // const controlsElement = document.querySelector(".controls");
+    // if (videoElement && controlsElement) {
+    //   controlsElement.style.maxWidth = `${videoElement.offsetWidth}px`;
+    // }
+  }
 
-    const controlsElement = document.querySelector(".controls");
-    if (videoElement && controlsElement) {
-      controlsElement.style.maxWidth = `${videoElement.offsetWidth}px`;
+  function toggleFullScreen(elementId) {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+      setIsFullScreen(false);
+      return;
     }
+    const container = document.getElementById(elementId);
+    if (container.requestFullscreen) container.requestFullscreen();
+    // else if (container.mozRequestFullScreen) container.mozRequestFullScreen();
+    // else if (container.webkitRequestFullscreen)
+    //   container.webkitRequestFullscreen();
+    // else if (container.msRequestFullscreen) container.msRequestFullscreen();
+    setIsFullScreen(true);
   }
 
   const handleToggleFullscreen = () => {
     toggleFullScreen("video-container");
-    setTimeout(() => {
-      handleControlsWidth();
-    }, 1);
+    // setTimeout(() => {
+    //   handleControlsWidth();
+    // }, 10);
   };
   function renderTime() {
     let t2 = videoRef.current ? videoRef.current.duration : 0;
@@ -149,53 +188,92 @@ export default function VideoScene() {
     poistion = e.nativeEvent.offsetX * poistion;
     setShowedTime(poistion);
   }
-  function setIsPlaying(state) {
-    isPlaying.current = state;
-    if (isPlaying.current) videoRef.current.play();
-    else videoRef.current.pause();
-  }
-  function handlePlay() {
-    const newState = !isPlaying.current;
-    setIsPlaying(newState);
 
+  function handlePlay() {
+    const newState = !isPlaying;
+    setIsPlaying(newState);
     sendTime(newState);
   }
   function handleKeyDown(e) {
-    if (videoFocused.current) {
+    console.log("hi");
+    if (keysEnabled) {
       const { code } = e;
       console.log(code);
       if (code === "Space") {
         handlePlay();
+        setShowControls(!showControls);
       }
     }
   }
+  function handleProgress(event) {
+    const video = videoRef.current;
+    if (video) {
+      const currentTime = video.currentTime;
+      const buffered = video.buffered;
+      let loadedAfterCurrentTime = 0;
 
+      for (let i = 0; i < buffered.length; i++) {
+        if (buffered.start(i) <= currentTime && currentTime < buffered.end(i)) {
+          loadedAfterCurrentTime += buffered.end(i) - currentTime;
+        }
+      }
+
+      setCacheAmount(parseInt(loadedAfterCurrentTime));
+    }
+  }
   return (
-    <div className="flex-col">
-      <input
-        type="text"
-        placeholder="link"
-        value={link}
-        onChange={(e) => setLink(e.target.value)}
-      />
-
-      <Button
-        onClick={() => {
-          setVideoSrc(link);
-          handleReloadVideo();
-        }}
-      >
-        ثبت
+    <div id="video-page">
+      <Button variant="secondary" className="video-back">
+        بازگشت
       </Button>
-      <input type="file" accept=".srt" onChange={handleSrtChange} />
-      <div id="video-container">
+      <div className="video-configs">
+        <div className="mb-3">
+          <label> لینک فیلم</label>
+          <input
+            dir="ltr"
+            type="text"
+            placeholder="link"
+            value={link}
+            className="form-control "
+            onChange={(e) => setLink(e.target.value)}
+          />
+        </div>
+        <Button
+          variant="primary"
+          className="mb-5"
+          onClick={() => {
+            setVideoSrc(link);
+            handleReloadVideo();
+          }}
+        >
+          ثبت لینک فیلم
+        </Button>
+        <div className="mb-4">
+          <label htmlFor="">بارگذاری زیرنویس</label>
+          <input
+            className="form-control "
+            type="file"
+            accept=".srt"
+            onChange={handleSrtChange}
+          />
+        </div>
+        {/* <div className="key-enable">
+          <label>فعال کردن کیبورد</label>
+          <Switch
+            checked={keysEnabled}
+            onChange={(checked) => setKeysEnabled(checked)}
+          />
+        </div> */}
+      </div>
+      <div tabIndex="-1" onKeyDown={handleKeyDown} id="video-container">
         <video
           id="my-video"
-          className="img-fluid "
+          className={isFullScreen ? "full" : " "}
           key={videoKey}
           ref={videoRef}
           onTimeUpdate={handleTimeUpdate}
-          onLoadedData={handleControlsWidth}
+          // onLoadedData={}
+          onProgress={handleProgress}
           onClick={(e) => {
             if (e.target.id === "my-video") {
               setShowControls(!showControls);
@@ -206,12 +284,15 @@ export default function VideoScene() {
         </video>
 
         <div className={showControls ? "controls" : "controls hide"}>
-          <h4 className="control-time">{renderTime()}</h4>
+          <div className="control-time-wrapper">
+            <h4 className="control-time">{renderTime()}</h4>
+            <h4>cache:{cacheAmount}</h4>
+          </div>
           <div className="upper-contorls">
             <img
               onClick={handlePlay}
-              className="btn-play "
-              src={isPlaying.current ? pauseIcon : playIcon}
+              className="btn-play icon-sm"
+              src={isPlaying ? pauseIcon : playIcon}
             />
             <img
               src={fullScreenIcon}
@@ -225,8 +306,11 @@ export default function VideoScene() {
             max={videoRef.current ? videoRef.current.duration.toString() : 0}
             step="1"
             value={currentTime}
+            onMouseUp={(e) => {
+              sendTime();
+            }}
             onChange={handleSeekBarChange}
-            className="video-range w-100"
+            className="form-range video-range"
             onMouseMove={handleHoverTime}
             onMouseLeave={() => {
               setShowedTime(currentTime);
