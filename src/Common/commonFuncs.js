@@ -87,3 +87,11 @@ export function secondsToTime(seconds, maxSeconds) {
 export function isEmptyObj(obj) {
   return Object.keys(obj).length === 0;
 }
+export function requestFullscreen(elementId) {
+  const container = document.getElementById(elementId);
+  if (container.requestFullscreen) container.requestFullscreen();
+  else if (container.mozRequestFullScreen) container.mozRequestFullScreen();
+  else if (container.webkitRequestFullscreen)
+    container.webkitRequestFullscreen();
+  else if (container.msRequestFullscreen) container.msRequestFullscreen();
+}

@@ -6,7 +6,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import playIcon from "../icons/play.svg";
 import pauseIcon from "../icons/pause.svg";
 import fullScreenIcon from "../icons/fullscreen.svg";
-import { secondsToTime } from "../Common/commonFuncs";
+import { requestFullscreen, secondsToTime } from "../Common/commonFuncs";
 import SRTCaptionViewer from "./SRTCaptionViewer";
 import { toast, ToastContainer } from "react-toastify";
 import Switch from "react-switch";
@@ -31,8 +31,7 @@ export default function VideoScene() {
   const [chooseFromFile, setChooseFromFile] = useState(true);
   const [videoFile, setVideoFile] = useState(null);
   const [subDelay, setSubDelay] = useState(0);
-  const [captionsMap, setCaptionsMap] = useState({});
-  const [currentCaption, setCurrentCaption] = useState("");
+
   const handleReloadVideo = () => {
     setVideoKey((prevKey) => prevKey + 1);
   };
@@ -51,15 +50,11 @@ export default function VideoScene() {
     run();
   }, [isPlaying]);
 
-  // useEffect(() => {
-  //   handleControlsWidth();
-  // }, [videoKey, isFullScreen]);
   function defaultToast(msg, timeout = 1000) {
     toast(msg, { autoClose: timeout, rtl: true });
   }
   useEffect(() => {
     async function run() {
-      // window.addEventListener("resize", handleControlsWidth);
       await connectSocket();
       socket.on("connect", () => {
         console.log("connected to server");
@@ -111,7 +106,6 @@ export default function VideoScene() {
 
         socket.disconnect();
       }
-      // window.removeEventListener("resize", handleControlsWidth);
     };
   }, []);
   useEffect(() => {
@@ -162,34 +156,15 @@ export default function VideoScene() {
     setTime(newTime);
     sendTime();
   }
-  function handleControlsWidth() {
-    // const videoElement = videoRef.current;
-    // const controlsElement = document.querySelector(".controls");
-    // if (videoElement && controlsElement) {
-    //   controlsElement.style.maxWidth = `${videoElement.offsetWidth}px`;
-    // }
-  }
 
-  function toggleFullScreen(elementId) {
+  const handleToggleFullscreen = () => {
     if (document.fullscreenElement) {
       document.exitFullscreen();
       setIsFullScreen(false);
       return;
     }
-    const container = document.getElementById(elementId);
-    if (container.requestFullscreen) container.requestFullscreen();
-    // else if (container.mozRequestFullScreen) container.mozRequestFullScreen();
-    // else if (container.webkitRequestFullscreen)
-    //   container.webkitRequestFullscreen();
-    // else if (container.msRequestFullscreen) container.msRequestFullscreen();
+    requestFullscreen("video-container");
     setIsFullScreen(true);
-  }
-
-  const handleToggleFullscreen = () => {
-    toggleFullScreen("video-container");
-    // setTimeout(() => {
-    //   handleControlsWidth();
-    // }, 10);
   };
   function renderTime() {
     let t2 =
@@ -233,15 +208,15 @@ export default function VideoScene() {
   }
   function handleKeyDown(e) {
     const subDelayRate = 5;
-
+    const goToRate = 5;
     if (keysEnabled) {
       const { code } = e;
       console.log(code);
       if (code === "Space") {
         handlePlay();
         setShowControls(!showControls);
-      } else if (code === "ArrowRight") goToNext(5);
-      else if (code === "ArrowLeft") goToNext(-5);
+      } else if (code === "ArrowRight") goToNext(goToRate);
+      else if (code === "ArrowLeft") goToNext(goToRate);
       else if (code === "Period") handleSubDelay(subDelayRate);
       else if (code === "Comma") handleSubDelay(-subDelayRate);
     }
@@ -396,8 +371,6 @@ export default function VideoScene() {
             subDelay={subDelay}
             videoRef={videoRef}
             srtText={srtText}
-            captionsMapState={[captionsMap, setCaptionsMap]}
-            currentCaptionState={[currentCaption, setCurrentCaption]}
           />
         )}
         <ToastContainer />
