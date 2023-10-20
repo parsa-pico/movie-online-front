@@ -186,7 +186,7 @@ export default function VideoScene() {
     const file = event.target.files[0];
     const reader = new FileReader();
 
-    reader.onload = () => {
+    reader.onloadend = () => {
       const content = reader.result;
 
       setSrtText(content);
