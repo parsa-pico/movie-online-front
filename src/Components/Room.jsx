@@ -1,16 +1,26 @@
 import React from "react";
+import { useEffect } from "react";
 import { useState } from "react";
-import { Button } from "react-bootstrap";
+import { Button, Col, Row } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 export default function Room() {
   const nav = useNavigate();
   const [name, setName] = useState("");
   const [roomId, setRoomId] = useState("");
+  const [shouldSave, setShouldSave] = useState(false);
+  useEffect(() => {
+    setName(localStorage.getItem("name") || "");
+    setRoomId(localStorage.getItem("roomId") || "");
+  }, []);
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
+        if (shouldSave) {
+          localStorage.setItem("name", name);
+          localStorage.setItem("roomId", roomId);
+        }
         nav(`/${roomId}`, { state: { name } });
       }}
       id="room-page"
@@ -30,6 +40,18 @@ export default function Room() {
         placeholder="نام اتاق"
         dir="rtl"
       />
+      <div className="room-check-wrapper ">
+        <label htmlFor="room-checkbox">به خاطر بسپار</label>
+        <input
+          checked={shouldSave}
+          onChange={(e) => {
+            setShouldSave(e.target.checked);
+          }}
+          id="room-checkbox"
+          type="checkbox"
+          className=""
+        />
+      </div>
       <Button type="submit" className="w-100 mt-2">
         ورود
       </Button>

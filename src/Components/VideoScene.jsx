@@ -2,7 +2,7 @@ import React from "react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "react-bootstrap";
 import { useSocket } from "../context/socket";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import playIcon from "../icons/play.svg";
 import pauseIcon from "../icons/pause.svg";
 import fullScreenIcon from "../icons/fullscreen.svg";
@@ -14,6 +14,7 @@ import ReactPlayer from "react-player";
 
 export default function VideoScene() {
   const [srtText, setSrtText] = useState(null);
+  const nav = useNavigate();
   const location = useLocation();
   const { socket, connectSocket } = useSocket();
   const [link, setLink] = useState("/test.mkv");
@@ -79,8 +80,16 @@ export default function VideoScene() {
 
         const t2 = Date.now();
         const delay = playing ? (t2 - t1) / 1000.0 : 0;
-
-        videoElement.currentTime = time + delay;
+        time = time + delay;
+        toast.info(
+          `${playing ? "playing" : "paused"} at ${secondsToTime(time)}`,
+          {
+            autoClose: 1500,
+            position: "top-left",
+            theme: "dark",
+          }
+        );
+        videoElement.currentTime = time;
       });
       socket.on("alert", (msg) => {
         defaultToast(msg);
@@ -245,7 +254,11 @@ export default function VideoScene() {
   }
   return (
     <div id="video-page">
-      <Button variant="secondary" className="video-back">
+      <Button
+        onClick={() => (window.location = "/")}
+        variant="secondary"
+        className="video-back"
+      >
         بازگشت
       </Button>
 

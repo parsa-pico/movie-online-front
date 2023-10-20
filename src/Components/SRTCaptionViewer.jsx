@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 
 const SRTCaptionViewer = ({ srtText, videoRef }) => {
   const [captions, setCaptions] = useState([]);
+  const [captionsMap, setCaptionsMap] = useState({});
   const [currentCaption, setCurrentCaption] = useState("");
 
   useEffect(() => {
@@ -39,6 +40,16 @@ const SRTCaptionViewer = ({ srtText, videoRef }) => {
       const captionsData = parseSRT(srtText);
 
       setCaptions(captionsData);
+
+      const capMap = {};
+      captionsData.forEach((caption) => {
+        const start = Math.floor(caption.startTime);
+        const end = Math.ceil(caption.endTime);
+        for (let i = start; i <= end; i++) {
+          capMap[i] = caption;
+        }
+      });
+      setCaptionsMap(capMap);
     } catch (error) {
       setCaptions([]);
       setCurrentCaption("");
@@ -50,10 +61,28 @@ const SRTCaptionViewer = ({ srtText, videoRef }) => {
   useEffect(() => {
     function handleTimeUpdate() {
       const currentTime = videoRef.current.currentTime;
-      const currentCaption = captions.find(
-        (caption) =>
-          currentTime >= caption.startTime && currentTime <= caption.endTime
-      );
+      // const currentCaption = captions.find(
+      //   (caption) =>
+      //     currentTime >= caption.startTime && currentTime <= caption.endTime
+      // );
+      let left = 0;
+      let right = captions.length - 1;
+      let mid;
+
+      while (left <= right) {
+        mid = Math.floor((left + right) / 2);
+        if (
+          captions[mid].startTime <= currentTime &&
+          captions[mid].endTime >= currentTime
+        ) {
+          setCurrentCaption(captions[mid]);
+          return;
+        } else if (captions[mid].startTime < currentTime) {
+          left = mid + 1;
+        } else {
+          right = mid - 1;
+        }
+      }
 
       setCurrentCaption(currentCaption);
     }
