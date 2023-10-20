@@ -27,6 +27,8 @@ export default function VideoScene() {
   const [keysEnabled, setKeysEnabled] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [cacheAmount, setCacheAmount] = useState(0);
+  const [chooseFromFile, setChooseFromFile] = useState(true);
+  const [videoFile, setVideoFile] = useState(null);
   const handleReloadVideo = () => {
     setVideoKey((prevKey) => prevKey + 1);
   };
@@ -34,7 +36,8 @@ export default function VideoScene() {
   useEffect(() => {
     const video = videoRef.current;
     video.currentTime = 0;
-    video.pause();
+    setTime(0);
+    setIsPlaying(false);
   }, [videoKey]);
   useEffect(() => {
     async function run() {
@@ -134,7 +137,12 @@ export default function VideoScene() {
   const handleTimeUpdate = () => {
     setTime(videoRef.current.currentTime);
   };
-
+  function goToNext(sec) {
+    const newTime = currentTime + sec;
+    videoRef.current.currentTime = newTime;
+    setTime(newTime);
+    sendTime();
+  }
   function handleControlsWidth() {
     // const videoElement = videoRef.current;
     // const controlsElement = document.querySelector(".controls");
@@ -165,8 +173,12 @@ export default function VideoScene() {
     // }, 10);
   };
   function renderTime() {
-    let t2 = videoRef.current ? videoRef.current.duration : 0;
+    let t2 =
+      videoRef.current && videoRef.current.duration
+        ? videoRef.current.duration
+        : 0;
     const t1 = secondsToTime(showedTime, t2);
+
     t2 = secondsToTime(t2);
     return `${t1} / ${t2}`;
   }
@@ -195,15 +207,23 @@ export default function VideoScene() {
     sendTime(newState);
   }
   function handleKeyDown(e) {
-    console.log("hi");
     if (keysEnabled) {
       const { code } = e;
       console.log(code);
       if (code === "Space") {
         handlePlay();
         setShowControls(!showControls);
-      }
+      } else if (code === "ArrowRight") goToNext(5);
+      else if (code === "ArrowLeft") goToNext(-5);
     }
+  }
+  function submitMovieSrc() {
+    if (!chooseFromFile) setVideoSrc(link);
+    else if (videoFile) {
+      const videoObjectURL = URL.createObjectURL(videoFile);
+      setVideoSrc(videoObjectURL);
+    }
+    handleReloadVideo();
   }
   function handleProgress(event) {
     const video = videoRef.current;
@@ -211,12 +231,14 @@ export default function VideoScene() {
       const currentTime = video.currentTime;
       const buffered = video.buffered;
       let loadedAfterCurrentTime = 0;
-
+      console.log("current time: ", currentTime);
       for (let i = 0; i < buffered.length; i++) {
+        console.log("start: ", buffered.start(i), " end:", buffered.end(i));
         if (buffered.start(i) <= currentTime && currentTime < buffered.end(i)) {
           loadedAfterCurrentTime += buffered.end(i) - currentTime;
         }
       }
+      console.log("---");
 
       setCacheAmount(parseInt(loadedAfterCurrentTime));
     }
@@ -226,27 +248,46 @@ export default function VideoScene() {
       <Button variant="secondary" className="video-back">
         بازگشت
       </Button>
+
       <div className="video-configs">
-        <div className="mb-3">
-          <label> لینک فیلم</label>
-          <input
-            dir="ltr"
-            type="text"
-            placeholder="link"
-            value={link}
-            className="form-control "
-            onChange={(e) => setLink(e.target.value)}
-          />
+        <div className="load-from-wrapper">
+          <h5>بارگذاری فیلم </h5>
+          <div className="flex-row">
+            <p>از فایل</p>
+            <Switch
+              checked={chooseFromFile}
+              onChange={(checked) => setChooseFromFile(checked)}
+            />
+            <p>از لینک</p>
+          </div>
         </div>
-        <Button
-          variant="primary"
-          className="mb-5"
-          onClick={() => {
-            setVideoSrc(link);
-            handleReloadVideo();
-          }}
-        >
-          ثبت لینک فیلم
+        {chooseFromFile && (
+          <div className="mb-3">
+            <label> فایل فیلم</label>
+            <input
+              dir="ltr"
+              type="file"
+              accept="video/*"
+              className="form-control "
+              onChange={(e) => setVideoFile(e.target.files[0])}
+            />
+          </div>
+        )}
+        {!chooseFromFile && (
+          <div className="mb-3">
+            <label> لینک فیلم</label>
+            <input
+              dir="ltr"
+              type="text"
+              placeholder="link"
+              value={link}
+              className="form-control "
+              onChange={(e) => setLink(e.target.value)}
+            />
+          </div>
+        )}
+        <Button variant="primary" className="mb-5" onClick={submitMovieSrc}>
+          ثبت
         </Button>
         <div className="mb-4">
           <label htmlFor="">بارگذاری زیرنویس</label>
@@ -272,7 +313,6 @@ export default function VideoScene() {
           key={videoKey}
           ref={videoRef}
           onTimeUpdate={handleTimeUpdate}
-          // onLoadedData={}
           onProgress={handleProgress}
           onClick={(e) => {
             if (e.target.id === "my-video") {
@@ -286,7 +326,7 @@ export default function VideoScene() {
         <div className={showControls ? "controls" : "controls hide"}>
           <div className="control-time-wrapper">
             <h4 className="control-time">{renderTime()}</h4>
-            <h4>cache:{cacheAmount}</h4>
+            <h4>cache:{cacheAmount}s</h4>
           </div>
           <div className="upper-contorls">
             <img
