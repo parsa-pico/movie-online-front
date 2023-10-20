@@ -7,7 +7,7 @@
   direction: rtl;
   height: 100%;
   position: relative;
-  background: black;
+
   /* background: linear-gradient(
     21deg,
     rgba(33, 43, 17, 1) 5%,
@@ -18,6 +18,13 @@
   /* background-size: 400% 400%; */
   color: white;
   /* animation: gradient 20s ease infinite; */
+}
+.video-show {
+  opacity: 1;
+}
+.video-hide {
+  opacity: 0;
+  pointer-events: none;
 }
 .video-back {
   position: absolute;
@@ -43,6 +50,7 @@
   background-color: black;
   display: flex;
   justify-content: center;
+  transition: all 0.3s;
 }
 
 #my-video {
@@ -50,7 +58,7 @@
   /* box-shadow: 0 0 0px 1px white; */
   max-width: 100%;
   height: auto;
-  border: 1px solid white;
+  /* border: 1px solid white; */
 }
 #video-container:focus-visible {
   border: none;

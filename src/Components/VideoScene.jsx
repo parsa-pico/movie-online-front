@@ -11,6 +11,7 @@ import SRTCaptionViewer from "./SRTCaptionViewer";
 import { toast, ToastContainer } from "react-toastify";
 import Switch from "react-switch";
 import ReactPlayer from "react-player";
+import SubtitleModal from "./SubtitleModal";
 
 export default function VideoScene() {
   const [srtText, setSrtText] = useState(null);
@@ -31,7 +32,10 @@ export default function VideoScene() {
   const [chooseFromFile, setChooseFromFile] = useState(true);
   const [videoFile, setVideoFile] = useState(null);
   const [subDelay, setSubDelay] = useState(0);
-
+  const [showModal, setShowModal] = useState(false);
+  const [newSub, setNewSub] = useState("");
+  const [showVideo, setShowVideo] = useState(false);
+  const [videoDurationFormatted, setVideoDurationFormatted] = useState("00:00");
   const handleReloadVideo = () => {
     setVideoKey((prevKey) => prevKey + 1);
   };
@@ -89,10 +93,18 @@ export default function VideoScene() {
         );
         videoElement.currentTime = time;
       });
+      socket.on("subDelay", (delay) => {
+        setSubDelay(delay);
+        infoToast(`a user changed subtitle delay : ${delay}`, 1000);
+      });
       socket.on("alert", (msg) => {
         defaultToast(msg);
       });
-
+      socket.on("subFile", (file) => {
+        console.log("received a sub");
+        setNewSub(file);
+        setShowModal(true);
+      });
       setInterval(() => {
         if (!socket.connected) defaultToast("اتصال شما قطع شده است");
       }, 10000);
@@ -119,6 +131,11 @@ export default function VideoScene() {
       window.removeEventListener("keydown", preventSpace);
     };
   }, []);
+  useEffect(() => {
+    if (cacheAmount === 0) {
+      handlePlay(false);
+    }
+  }, [cacheAmount]);
   function infoToast(msg, autoClose = 1500) {
     toast.info(msg, {
       autoClose,
@@ -167,22 +184,31 @@ export default function VideoScene() {
     setIsFullScreen(true);
   };
   function renderTime() {
-    let t2 =
-      videoRef.current && videoRef.current.duration
-        ? videoRef.current.duration
-        : 0;
-    const t1 = secondsToTime(showedTime, t2);
+    const t1 = secondsToTime(showedTime);
+    const t2 = videoDurationFormatted;
 
-    t2 = secondsToTime(t2);
     return `${t1} / ${t2}`;
   }
+
+  function handleApplyNewSub() {
+    try {
+      setSrtText(newSub);
+      setShowModal(false);
+    } catch (error) {
+      console.log(error);
+      alert("زیرنویس ارسالی اشکال دارد");
+    }
+  }
+
   const handleSrtChange = (event) => {
     const file = event.target.files[0];
-    const reader = new FileReader();
+    if (!file) return;
 
+    const reader = new FileReader();
     reader.onloadend = () => {
       const content = reader.result;
 
+      socket.emit("subFile", content);
       setSrtText(content);
     };
 
@@ -195,19 +221,23 @@ export default function VideoScene() {
     setShowedTime(poistion);
   }
 
-  function handlePlay() {
-    const newState = !isPlaying;
+  function handlePlay(newState) {
+    console.log(newState);
+    if (newState === undefined) newState = !isPlaying;
+
+    console.log(newState);
     setIsPlaying(newState);
     sendTime(newState);
   }
   function handleSubDelay(delay) {
+    if (!srtText) return;
     const totalDelay = subDelay + delay;
     setSubDelay(totalDelay);
     infoToast(`subtitle delay : ${totalDelay}`, 1000);
     socket.emit("subDelay", totalDelay);
   }
   function handleKeyDown(e) {
-    const subDelayRate = 5;
+    const subDelayRate = 0.5;
     const goToRate = 5;
     if (keysEnabled) {
       const { code } = e;
@@ -216,12 +246,13 @@ export default function VideoScene() {
         handlePlay();
         setShowControls(!showControls);
       } else if (code === "ArrowRight") goToNext(goToRate);
-      else if (code === "ArrowLeft") goToNext(goToRate);
+      else if (code === "ArrowLeft") goToNext(-goToRate);
       else if (code === "Period") handleSubDelay(subDelayRate);
       else if (code === "Comma") handleSubDelay(-subDelayRate);
     }
   }
   function submitMovieSrc() {
+    setShowVideo(false);
     if (!chooseFromFile) setVideoSrc(link);
     else if (videoFile) {
       const videoObjectURL = URL.createObjectURL(videoFile);
@@ -231,6 +262,7 @@ export default function VideoScene() {
   }
   function handleProgress(event) {
     const video = videoRef.current;
+
     if (video) {
       const currentTime = video.currentTime;
       const buffered = video.buffered;
@@ -243,7 +275,6 @@ export default function VideoScene() {
         }
       }
       console.log("---");
-
       setCacheAmount(parseInt(loadedAfterCurrentTime));
     }
   }
@@ -314,7 +345,12 @@ export default function VideoScene() {
           />
         </div> */}
       </div>
-      <div tabIndex="-1" onKeyDown={handleKeyDown} id="video-container">
+      <div
+        tabIndex="-1"
+        onKeyDown={handleKeyDown}
+        id="video-container"
+        className={showVideo ? "video-show" : "video-hide"}
+      >
         <video
           id="my-video"
           className={isFullScreen ? "full" : " "}
@@ -322,6 +358,11 @@ export default function VideoScene() {
           ref={videoRef}
           onTimeUpdate={handleTimeUpdate}
           onProgress={handleProgress}
+          onLoadedData={(e) => {
+            setShowVideo(true);
+            const t = secondsToTime(videoRef.current.duration);
+            setVideoDurationFormatted(t);
+          }}
           onClick={(e) => {
             if (e.target.id === "my-video") {
               setShowControls(!showControls);
@@ -338,7 +379,7 @@ export default function VideoScene() {
           </div>
           <div className="upper-contorls">
             <img
-              onClick={handlePlay}
+              onClick={() => handlePlay()}
               className="btn-play icon-sm"
               src={isPlaying ? pauseIcon : playIcon}
             />
@@ -374,6 +415,15 @@ export default function VideoScene() {
           />
         )}
         <ToastContainer />
+        <SubtitleModal
+          show={showModal}
+          setShow={setShowModal}
+          handleCancel={() => {
+            setNewSub("");
+            setShowModal(false);
+          }}
+          handleApply={handleApplyNewSub}
+        />
       </div>
     </div>
   );

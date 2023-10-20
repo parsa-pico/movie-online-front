@@ -19,7 +19,7 @@ const SRTCaptionViewer = ({ srtText, videoRef, subDelay, currentTime }) => {
         captionsMap[mid].endTime >= currentTime
       ) {
         setCurrentCaption(captionsMap[mid]);
-        console.log("found cap:", captionsMap[mid]);
+        // console.log("found caption:", captionsMap[mid]);
         return;
       } else if (captionsMap[mid].startTime < currentTime) {
         left = mid + 1;
@@ -50,7 +50,7 @@ const SRTCaptionViewer = ({ srtText, videoRef, subDelay, currentTime }) => {
             text,
           });
       }
-      console.log(capMap[0]);
+
       setCaptionsMap(capMap);
     } catch (error) {
       console.log(error);
