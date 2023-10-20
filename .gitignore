@@ -24,3 +24,5 @@ yarn-error.log*
 
 #my files
 test.mkv
+#BE SURE TO REMOVE THIS BEFORE PRODUCTION
+package-lock.json
