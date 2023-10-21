@@ -12,13 +12,14 @@ import { toast, ToastContainer } from "react-toastify";
 import Switch from "react-switch";
 import ReactPlayer from "react-player";
 import SubtitleModal from "./SubtitleModal";
+import MovieLinkModal from "./MovieLinkModal";
 
 export default function VideoScene() {
   const [srtText, setSrtText] = useState(null);
   const nav = useNavigate();
   const location = useLocation();
   const { socket, connectSocket } = useSocket();
-  const [link, setLink] = useState("/test.mkv");
+  const [link, setLink] = useState("");
   const [videoSrc, setVideoSrc] = useState(link);
   const videoRef = useRef(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -32,8 +33,11 @@ export default function VideoScene() {
   const [chooseFromFile, setChooseFromFile] = useState(true);
   const [videoFile, setVideoFile] = useState(null);
   const [subDelay, setSubDelay] = useState(0);
-  const [showModal, setShowModal] = useState(false);
+  const [showSubModal, setShowSubModal] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
   const [newSub, setNewSub] = useState("");
+  const [newMovieLink, setNewMovieLink] = useState("");
+
   const [showVideo, setShowVideo] = useState(false);
   const [videoDurationFormatted, setVideoDurationFormatted] = useState("00:00");
   const handleReloadVideo = () => {
@@ -103,7 +107,12 @@ export default function VideoScene() {
       socket.on("subFile", (file) => {
         console.log("received a sub");
         setNewSub(file);
-        setShowModal(true);
+        setShowSubModal(true);
+      });
+      socket.on("movieLink", (link) => {
+        console.log("received a movie link");
+        setNewMovieLink(link);
+        setShowVideoModal(true);
       });
       setInterval(() => {
         if (!socket.connected) defaultToast("اتصال شما قطع شده است");
@@ -120,7 +129,8 @@ export default function VideoScene() {
           "disconnet",
           "time",
           "subDelay",
-          "subFile"
+          "subFile",
+          "movieLink"
         );
 
         socket.disconnect();
@@ -197,10 +207,23 @@ export default function VideoScene() {
     return `${t1} / ${t2}`;
   }
 
+  function handleApplyNewLink() {
+    try {
+      setLink(newMovieLink);
+      setVideoSrc(newMovieLink);
+      handleReloadVideo();
+      toast("در حال بارگذاری فیلم", { autoClose: 5000 });
+      setShowVideoModal(false);
+    } catch (error) {
+      console.log(error);
+      alert("لینک ارسالی اشکال دارد");
+    }
+  }
+
   function handleApplyNewSub() {
     try {
       setSrtText(newSub);
-      setShowModal(false);
+      setShowSubModal(false);
     } catch (error) {
       console.log(error);
       alert("زیرنویس ارسالی اشکال دارد");
@@ -257,8 +280,10 @@ export default function VideoScene() {
   }
   function submitMovieSrc() {
     setShowVideo(false);
-    if (!chooseFromFile) setVideoSrc(link);
-    else if (videoFile) {
+    if (!chooseFromFile) {
+      socket.emit("movieLink", link);
+      setVideoSrc(link);
+    } else if (videoFile) {
       const videoObjectURL = URL.createObjectURL(videoFile);
       setVideoSrc(videoObjectURL);
     }
@@ -424,13 +449,21 @@ export default function VideoScene() {
             />
           )}
           <SubtitleModal
-            show={showModal}
-            setShow={setShowModal}
+            show={showSubModal}
+            setShow={setShowSubModal}
             handleCancel={() => {
               setNewSub("");
-              setShowModal(false);
+              setShowSubModal(false);
             }}
             handleApply={handleApplyNewSub}
+          />
+          <MovieLinkModal
+            show={showVideoModal}
+            handleCancel={() => {
+              setNewMovieLink("");
+              setShowVideoModal(false);
+            }}
+            handleApply={handleApplyNewLink}
           />
         </div>
         <ToastContainer className="video-toast" />
