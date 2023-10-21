@@ -50,7 +50,7 @@
 #video-container {
   position: relative;
   width: fit-content !important;
-  margin-top: 2rem;
+
   background-color: black;
   display: flex;
   justify-content: center;
@@ -166,7 +166,52 @@
   opacity: 1;
   pointer-events: visible;
 }
+
+.messages-wrapper {
+  direction: rtl;
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  right: 1px;
+  top: 1px;
+  opacity: 1;
+  transition: all 0.5s;
+  z-index: 1;
+}
+
+.msg-input {
+  /* transform: translate(0%, 50%); */
+  direction: rtl;
+  display: flex;
+  flex-direction: row;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 1;
+  transition: all 0.3s;
+  z-index: 1;
+}
+.msg-hide {
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+}
 @media screen and (max-width: 1024px) {
+  .not-fullscreen .msg-input,
+  .not-fullscreen .messages-wrapper {
+    opacity: 0;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .msg-input {
+    max-width: 200px;
+  }
+  .msg-input button {
+    max-width: 50px;
+    font-size: 0.8rem;
+    padding: 0.1rem 0.3rem;
+  }
   .video-configs {
     width: 100%;
   }

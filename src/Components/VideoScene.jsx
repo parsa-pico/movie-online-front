@@ -19,7 +19,7 @@ export default function VideoScene() {
   const nav = useNavigate();
   const location = useLocation();
   const { socket, connectSocket } = useSocket();
-  const [link, setLink] = useState("");
+  const [link, setLink] = useState("/test.mkv");
   const [videoSrc, setVideoSrc] = useState(link);
   const videoRef = useRef(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -37,12 +37,33 @@ export default function VideoScene() {
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [newSub, setNewSub] = useState("");
   const [newMovieLink, setNewMovieLink] = useState("");
-
   const [showVideo, setShowVideo] = useState(false);
   const [videoDurationFormatted, setVideoDurationFormatted] = useState("00:00");
+  const [messages, setMessages] = useState([]);
+  const [showMsgs, setShowMsgs] = useState(true);
+  const [msgInputFocused, setMsgInputFocused] = useState(false);
+  const [msgInput, setMsgInput] = useState("");
+  const [msgCounter, setMsgCounter] = useState(5);
+
   const handleReloadVideo = () => {
     setVideoKey((prevKey) => prevKey + 1);
   };
+
+  useEffect(() => {
+    if (msgCounter > 0)
+      setTimeout(() => {
+        setMsgCounter(msgCounter - 1);
+      }, 1000);
+    else {
+      if (!msgInputFocused) {
+        setShowMsgs(false);
+        setMsgInputFocused(false);
+      }
+    }
+  }, [msgCounter]);
+  useEffect(() => {
+    if (showMsgs && !msgInputFocused) setMsgCounter(5);
+  }, [showMsgs]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -50,6 +71,7 @@ export default function VideoScene() {
     setTime(0);
     setIsPlaying(false);
   }, [videoKey]);
+
   useEffect(() => {
     async function run() {
       if (isPlaying) await videoRef.current.play();
@@ -114,6 +136,10 @@ export default function VideoScene() {
         setNewMovieLink(link);
         setShowVideoModal(true);
       });
+
+      socket.on("error", (err) => {
+        alert(err.msg);
+      });
       setInterval(() => {
         if (!socket.connected) defaultToast("اتصال شما قطع شده است");
       }, 10000);
@@ -130,13 +156,26 @@ export default function VideoScene() {
           "time",
           "subDelay",
           "subFile",
-          "movieLink"
+          "movieLink",
+          "error",
+          "msg"
         );
 
         socket.disconnect();
       }
     };
   }, []);
+  function msgHandler(obj) {
+    const msgsCopy = [...messages];
+    msgsCopy.push(obj);
+    setMessages(msgsCopy);
+  }
+  useEffect(() => {
+    if (socket) socket.on("msg", msgHandler);
+    return () => {
+      socket.off("msg", msgHandler);
+    };
+  }, [messages]);
   useEffect(() => {
     function preventSpace(e) {
       if (e.keyCode == 32 && e.target.id === "video-container") {
@@ -272,6 +311,8 @@ export default function VideoScene() {
       if (code === "Space") {
         handlePlay();
         setShowControls(!showControls);
+        setMsgInputFocused(!showControls);
+        setShowMsgs(!showControls);
       } else if (code === "ArrowRight") goToNext(goToRate);
       else if (code === "ArrowLeft") goToNext(-goToRate);
       else if (code === "Period") handleSubDelay(subDelayRate);
@@ -297,15 +338,31 @@ export default function VideoScene() {
       const currentTime = video.currentTime;
       const buffered = video.buffered;
       let loadedAfterCurrentTime = 0;
-      console.log("current time: ", currentTime);
+      // console.log("current time: ", currentTime);
       for (let i = 0; i < buffered.length; i++) {
-        console.log("start: ", buffered.start(i), " end:", buffered.end(i));
+        // console.log("start: ", buffered.start(i), " end:", buffered.end(i));
         if (buffered.start(i) <= currentTime && currentTime < buffered.end(i)) {
           loadedAfterCurrentTime += buffered.end(i) - currentTime;
         }
       }
-      console.log("---");
+      // console.log("---");
       setCacheAmount(parseInt(loadedAfterCurrentTime));
+    }
+  }
+  function renderMsg() {
+    const result = messages.slice(-3).map((msgObj, idx) => {
+      return (
+        <p key={idx}>
+          {msgObj.name}:{msgObj.text}
+        </p>
+      );
+    });
+    return result;
+  }
+  function sendMsg() {
+    if (msgInput) {
+      socket.emit("msg", msgInput, msgHandler);
+      setMsgInput("");
     }
   }
   return (
@@ -379,13 +436,39 @@ export default function VideoScene() {
           />
         </div> */}
       </div>
-      <div id="fullscreen-wrapper">
+      <div
+        id="fullscreen-wrapper"
+        className={isFullScreen ? "fullscreen-mode" : "not-fullscreen"}
+      >
         <div
           tabIndex="-1"
           onKeyDown={handleKeyDown}
           id="video-container"
           className={showVideo ? "video-show" : "video-hide"}
         >
+          <div className={showMsgs ? "msg-input" : "msg-input msg-hide"}>
+            <input
+              id="msg-input"
+              value={msgInput}
+              placeholder="چت کنید"
+              onClick={(e) => {
+                setMsgInputFocused(true);
+              }}
+              onChange={(e) => {
+                setMsgInput(e.target.value);
+              }}
+              type="text"
+              className="form-control"
+            />
+            <Button onClick={sendMsg}>ارسال</Button>
+          </div>
+          <div
+            className={
+              showMsgs ? "messages-wrapper" : "messages-wrapper msg-hide"
+            }
+          >
+            {renderMsg()}
+          </div>
           <video
             id="my-video"
             className={isFullScreen ? "full" : " "}
@@ -401,14 +484,17 @@ export default function VideoScene() {
             onClick={(e) => {
               if (e.target.id === "my-video") {
                 setShowControls(!showControls);
+                setMsgInputFocused(!showControls);
+                setShowMsgs(!showControls);
               }
             }}
           >
             <source src={videoSrc} />
           </video>
+
           <div className={showControls ? "controls" : "controls hide"}>
             <div className="control-time-wrapper">
-              <h4 className="control-time">{renderTime()}</h4>
+              <h4 className="control-time ">{renderTime()}</h4>
               <h4>cache:{cacheAmount}s</h4>
             </div>
             <div className="upper-contorls">
