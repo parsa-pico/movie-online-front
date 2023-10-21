@@ -114,7 +114,14 @@ export default function VideoScene() {
 
     return () => {
       if (socket) {
-        removeSocketlisteners("alert", "connect", "disconnet", "time");
+        removeSocketlisteners(
+          "alert",
+          "connect",
+          "disconnet",
+          "time",
+          "subDelay",
+          "subFile"
+        );
 
         socket.disconnect();
       }
@@ -180,7 +187,7 @@ export default function VideoScene() {
       setIsFullScreen(false);
       return;
     }
-    requestFullscreen("video-container");
+    requestFullscreen("fullscreen-wrapper");
     setIsFullScreen(true);
   };
   function renderTime() {
@@ -222,10 +229,7 @@ export default function VideoScene() {
   }
 
   function handlePlay(newState) {
-    console.log(newState);
     if (newState === undefined) newState = !isPlaying;
-
-    console.log(newState);
     setIsPlaying(newState);
     sendTime(newState);
   }
@@ -258,6 +262,7 @@ export default function VideoScene() {
       const videoObjectURL = URL.createObjectURL(videoFile);
       setVideoSrc(videoObjectURL);
     }
+    toast("در حال بارگذاری فیلم", { autoClose: 5000 });
     handleReloadVideo();
   }
   function handleProgress(event) {
@@ -294,6 +299,10 @@ export default function VideoScene() {
           <div className="flex-row">
             <p>از فایل</p>
             <Switch
+              offColor="#0d6efd"
+              onColor="#0d6efd"
+              uncheckedIcon={false}
+              checkedIcon={false}
               checked={chooseFromFile}
               onChange={(checked) => setChooseFromFile(checked)}
             />
@@ -345,85 +354,86 @@ export default function VideoScene() {
           />
         </div> */}
       </div>
-      <div
-        tabIndex="-1"
-        onKeyDown={handleKeyDown}
-        id="video-container"
-        className={showVideo ? "video-show" : "video-hide"}
-      >
-        <video
-          id="my-video"
-          className={isFullScreen ? "full" : " "}
-          key={videoKey}
-          ref={videoRef}
-          onTimeUpdate={handleTimeUpdate}
-          onProgress={handleProgress}
-          onLoadedData={(e) => {
-            setShowVideo(true);
-            const t = secondsToTime(videoRef.current.duration);
-            setVideoDurationFormatted(t);
-          }}
-          onClick={(e) => {
-            if (e.target.id === "my-video") {
-              setShowControls(!showControls);
-            }
-          }}
+      <div id="fullscreen-wrapper">
+        <div
+          tabIndex="-1"
+          onKeyDown={handleKeyDown}
+          id="video-container"
+          className={showVideo ? "video-show" : "video-hide"}
         >
-          <source src={videoSrc} />
-        </video>
-
-        <div className={showControls ? "controls" : "controls hide"}>
-          <div className="control-time-wrapper">
-            <h4 className="control-time">{renderTime()}</h4>
-            <h4>cache:{cacheAmount}s</h4>
-          </div>
-          <div className="upper-contorls">
-            <img
-              onClick={() => handlePlay()}
-              className="btn-play icon-sm"
-              src={isPlaying ? pauseIcon : playIcon}
-            />
-            <img
-              src={fullScreenIcon}
-              className="img-fluid icon-sm"
-              onClick={handleToggleFullscreen}
-            />
-          </div>
-          <input
-            type="range"
-            min="0"
-            max={videoRef.current ? videoRef.current.duration.toString() : 0}
-            step="1"
-            value={currentTime}
-            onMouseUp={(e) => {
-              sendTime();
+          <video
+            id="my-video"
+            className={isFullScreen ? "full" : " "}
+            key={videoKey}
+            ref={videoRef}
+            onTimeUpdate={handleTimeUpdate}
+            onProgress={handleProgress}
+            onLoadedData={(e) => {
+              setShowVideo(true);
+              const t = secondsToTime(videoRef.current.duration);
+              setVideoDurationFormatted(t);
             }}
-            onChange={handleSeekBarChange}
-            className="form-range video-range"
-            onMouseMove={handleHoverTime}
-            onMouseLeave={() => {
-              setShowedTime(currentTime);
+            onClick={(e) => {
+              if (e.target.id === "my-video") {
+                setShowControls(!showControls);
+              }
             }}
+          >
+            <source src={videoSrc} />
+          </video>
+          <div className={showControls ? "controls" : "controls hide"}>
+            <div className="control-time-wrapper">
+              <h4 className="control-time">{renderTime()}</h4>
+              <h4>cache:{cacheAmount}s</h4>
+            </div>
+            <div className="upper-contorls">
+              <img
+                onClick={() => handlePlay()}
+                className="btn-play icon-sm"
+                src={isPlaying ? pauseIcon : playIcon}
+              />
+              <img
+                src={fullScreenIcon}
+                className="img-fluid icon-sm"
+                onClick={handleToggleFullscreen}
+              />
+            </div>
+            <input
+              type="range"
+              min="0"
+              max={videoRef.current ? videoRef.current.duration.toString() : 0}
+              step="1"
+              value={currentTime}
+              onMouseUp={(e) => {
+                sendTime();
+              }}
+              onChange={handleSeekBarChange}
+              className="form-range video-range"
+              onMouseMove={handleHoverTime}
+              onMouseLeave={() => {
+                setShowedTime(currentTime);
+              }}
+            />
+          </div>
+          {srtText && (
+            <SRTCaptionViewer
+              currentTime={currentTime}
+              subDelay={subDelay}
+              videoRef={videoRef}
+              srtText={srtText}
+            />
+          )}
+          <SubtitleModal
+            show={showModal}
+            setShow={setShowModal}
+            handleCancel={() => {
+              setNewSub("");
+              setShowModal(false);
+            }}
+            handleApply={handleApplyNewSub}
           />
         </div>
-        {srtText && (
-          <SRTCaptionViewer
-            currentTime={currentTime}
-            subDelay={subDelay}
-            videoRef={videoRef}
-            srtText={srtText}
-          />
-        )}
-        <ToastContainer />
-        <SubtitleModal
-          show={showModal}
-          setShow={setShowModal}
-          handleCancel={() => {
-            setNewSub("");
-            setShowModal(false);
-          }}
-          handleApply={handleApplyNewSub}
-        />
+        <ToastContainer className="video-toast" />
       </div>
     </div>
   );

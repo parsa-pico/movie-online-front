@@ -13,3 +13,6 @@
   align-self: flex-end;
   margin: 1rem 0;
 }
+.room-description {
+  align-self: flex-end;
+}

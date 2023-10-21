@@ -42,7 +42,11 @@
     background-position: 0% 50%;
   }
 }
-
+#fullscreen-wrapper {
+  width: fit-content !important;
+  display: flex;
+  justify-content: center;
+}
 #video-container {
   position: relative;
   width: fit-content !important;
@@ -156,6 +160,11 @@
 }
 .key-enable {
   margin: 1rem 0;
+}
+.Toastify,
+.video-toast {
+  opacity: 1;
+  pointer-events: visible;
 }
 @media screen and (max-width: 1024px) {
   .video-configs {

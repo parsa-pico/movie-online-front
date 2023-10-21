@@ -13,6 +13,7 @@ export default function Room() {
     setName(localStorage.getItem("name") || "");
     setRoomId(localStorage.getItem("roomId") || "");
   }, []);
+
   return (
     <form
       onSubmit={(e) => {
@@ -25,7 +26,7 @@ export default function Room() {
       }}
       id="room-page"
     >
-      <h2> ورود به اتاق</h2>
+      <h2 className="mb-5"> ورود به اتاق</h2>
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -51,6 +52,11 @@ export default function Room() {
           type="checkbox"
           className=""
         />
+      </div>
+      <div className="text-danger room-description mt-1 mb-3">
+        <small>
+          قبل از ورود به اتاق از تنظیم بودن ساعت دستگاه خود مطمئن شوید
+        </small>
       </div>
       <Button type="submit" className="w-100 mt-2">
         ورود
