@@ -3,25 +3,25 @@ import { getToken } from "./Services/authService";
 import { useEffect, useState } from "react";
 import VideoScene from "./Components/VideoScene";
 import Room from "./Components/Room";
+import { useSocket } from "./context/socket";
 
 function App() {
   const loc = useLocation();
-
+  const { socket } = useSocket();
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, [loc]);
 
   useEffect(() => {
-    // socket.on("connect", () => {
-    //   console.log("Connected to server");
-    // });
-    // socket.on("error", (err) => {
-    //   alert(err.msg);
-    // });
-    // return () => {
-    //   if (socket.connected) socket.disconnect();
-    //   socket.removeAllListeners();
-    // };
+    if (socket)
+      socket.on("error", (err) => {
+        alert(err.msg);
+      });
+
+    return () => {
+      if (socket && socket.connected) socket.disconnect();
+      socket.removeAllListeners("error");
+    };
   }, []);
 
   return (

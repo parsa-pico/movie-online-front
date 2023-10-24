@@ -2,7 +2,12 @@ import React from "react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "react-bootstrap";
 import { useSocket } from "../context/socket";
-import { useLocation, useNavigate } from "react-router-dom";
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import playIcon from "../icons/play.svg";
 import pauseIcon from "../icons/pause.svg";
 import fullScreenIcon from "../icons/fullscreen.svg";
@@ -15,6 +20,8 @@ import SubtitleModal from "./SubtitleModal";
 import MovieLinkModal from "./MovieLinkModal";
 
 export default function VideoScene() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const params = useParams();
   const [srtText, setSrtText] = useState(null);
   const nav = useNavigate();
   const location = useLocation();
@@ -29,7 +36,7 @@ export default function VideoScene() {
   const [showedTime, setShowedTime] = useState(0);
   const [keysEnabled, setKeysEnabled] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [cacheAmount, setCacheAmount] = useState(0);
+  const [cacheAmount, setCacheAmount] = useState(-1);
   const [chooseFromFile, setChooseFromFile] = useState(true);
   const [videoFile, setVideoFile] = useState(null);
   const [subDelay, setSubDelay] = useState(0);
@@ -85,7 +92,17 @@ export default function VideoScene() {
   }
   useEffect(() => {
     async function run() {
-      await connectSocket();
+      let userName = searchParams.get("name");
+      while (!userName) {
+        userName = prompt("لطفا یک نام کاربری دلخواه وارد کنید(به فارسی)");
+        if (userName)
+          window.location =
+            window.location.origin +
+            window.location.pathname +
+            `?name=${userName}`;
+      }
+
+      if (socket.disconnected) await connectSocket();
       socket.on("connect", () => {
         console.log("connected to server");
         defaultToast("اتصال شما برقرار است");
@@ -94,11 +111,9 @@ export default function VideoScene() {
       socket.on("disconnect ", () => {
         defaultToast("اتصال شما قطع شده است");
       });
-      socket.emit(
-        "joinRoom",
-        location.pathname,
-        (location.state && location.state.name) || "کاربر مهمان"
-      );
+      console.log(params);
+      socket.emit("joinRoom", params.roomName, userName);
+
       socket.on("time", async (time, t1, playing) => {
         console.log("a user changed time");
         const videoElement = videoRef.current;
@@ -137,9 +152,6 @@ export default function VideoScene() {
         setShowVideoModal(true);
       });
 
-      socket.on("error", (err) => {
-        alert(err.msg);
-      });
       setInterval(() => {
         if (!socket.connected) defaultToast("اتصال شما قطع شده است");
       }, 10000);
@@ -157,7 +169,6 @@ export default function VideoScene() {
           "subDelay",
           "subFile",
           "movieLink",
-          "error",
           "msg"
         );
 
@@ -376,7 +387,22 @@ export default function VideoScene() {
       </Button>
 
       <div className="video-configs">
-        <div className="load-from-wrapper">
+        <div className="">
+          <Button
+            className=""
+            onClick={() => {
+              const url = window.location.origin + window.location.pathname;
+              navigator.clipboard.writeText(url);
+              defaultToast("لینک کپی شد");
+            }}
+          >
+            کپی لینک اتاق
+          </Button>
+          <div>
+            <small>این لینک را به دوستان خود بدهید</small>
+          </div>
+        </div>
+        <div className="load-from-wrapper mt-5">
           <h5>بارگذاری فیلم </h5>
           <div className="flex-row">
             <p>از فایل</p>
@@ -477,6 +503,7 @@ export default function VideoScene() {
             onTimeUpdate={handleTimeUpdate}
             onProgress={handleProgress}
             onLoadedData={(e) => {
+              videoRef.current.volume = 1;
               setShowVideo(true);
               const t = secondsToTime(videoRef.current.duration);
               setVideoDurationFormatted(t);

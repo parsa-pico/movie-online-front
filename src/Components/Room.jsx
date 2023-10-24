@@ -3,15 +3,20 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { Button, Col, Row } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { useSocket } from "../context/socket";
+import jwtDecode from "jwt-decode";
 
 export default function Room() {
   const nav = useNavigate();
   const [name, setName] = useState("");
-  const [roomId, setRoomId] = useState("");
   const [shouldSave, setShouldSave] = useState(false);
+  const { socket, connectSocket } = useSocket();
   useEffect(() => {
-    setName(localStorage.getItem("name") || "");
-    setRoomId(localStorage.getItem("roomId") || "");
+    async function run() {
+      setName(localStorage.getItem("name") || "");
+      if (socket.disconnected) await connectSocket();
+    }
+    run();
   }, []);
 
   return (
@@ -20,27 +25,26 @@ export default function Room() {
         e.preventDefault();
         if (shouldSave) {
           localStorage.setItem("name", name);
-          localStorage.setItem("roomId", roomId);
         }
-        nav(`/${roomId}`, { state: { name } });
+        socket.emit("createRoom", (id) => {
+          window.location = `/${id}?name=${name}`;
+        });
       }}
       id="room-page"
     >
-      <h2 className="mb-5"> ورود به اتاق</h2>
+      <h2 className="mb-5"> ساخت اتاق جدید </h2>
+      <label style={{ alignSelf: "flex-end" }} htmlFor="userName">
+        نام كاربري(فارسي)
+      </label>
       <input
+        required
+        id="userName"
         value={name}
         onChange={(e) => setName(e.target.value)}
         className="form-control w-100 mb-2"
-        placeholder="نام کاربری دلخواه"
         dir="rtl"
       />
-      <input
-        value={roomId}
-        onChange={(e) => setRoomId(e.target.value)}
-        className="form-control w-100"
-        placeholder="نام اتاق"
-        dir="rtl"
-      />
+
       <div className="room-check-wrapper ">
         <label htmlFor="room-checkbox">به خاطر بسپار</label>
         <input
@@ -59,7 +63,7 @@ export default function Room() {
         </small>
       </div>
       <Button type="submit" className="w-100 mt-2">
-        ورود
+        ساخت اتاق
       </Button>
     </form>
   );
