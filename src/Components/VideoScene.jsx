@@ -111,7 +111,7 @@ export default function VideoScene() {
       socket.on("disconnect ", () => {
         defaultToast("اتصال شما قطع شده است");
       });
-      console.log(params);
+
       socket.emit("joinRoom", params.roomName, userName);
 
       socket.on("time", async (time, t1, playing) => {
@@ -199,7 +199,7 @@ export default function VideoScene() {
     };
   }, []);
   useEffect(() => {
-    if (cacheAmount === 0) {
+    if (cacheAmount === 0 && isPlaying) {
       handlePlay(false);
     }
   }, [cacheAmount]);
@@ -542,7 +542,12 @@ export default function VideoScene() {
               max={videoRef.current ? videoRef.current.duration.toString() : 0}
               step="1"
               value={currentTime}
-              onMouseUp={(e) => {
+              onMouseUp={() => {
+                console.log("on mouse up");
+                sendTime();
+              }}
+              onTouchEnd={() => {
+                console.log("on touch end");
                 sendTime();
               }}
               onChange={handleSeekBarChange}
