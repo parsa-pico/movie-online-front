@@ -56,7 +56,7 @@ const SRTCaptionViewer = ({ srtText, videoRef, subDelay, currentTime }) => {
       console.log(error);
     }
   }, [subDelay]);
-  const parseSRT = (srtText) => {
+  function parseSRT(srtText) {
     const captionBlocks = srtText.split("\r\n\r\n");
 
     const parsedCaptions = captionBlocks.map((block) => {
@@ -75,9 +75,9 @@ const SRTCaptionViewer = ({ srtText, videoRef, subDelay, currentTime }) => {
     });
 
     return parsedCaptions;
-  };
+  }
 
-  const parseTime = (timeString) => {
+  function parseTime(timeString) {
     const [hours, minutes, seconds] = timeString
       .replace(",", ".")
       .split(":")
@@ -85,7 +85,7 @@ const SRTCaptionViewer = ({ srtText, videoRef, subDelay, currentTime }) => {
     const time = hours * 3600 + minutes * 60 + seconds;
 
     return time;
-  };
+  }
   useEffect(() => {
     if (!srtText) return;
     try {
@@ -102,11 +102,12 @@ const SRTCaptionViewer = ({ srtText, videoRef, subDelay, currentTime }) => {
   }, [srtText]);
 
   return (
-    currentCaption && (
-      <div className={"caption"}>
-        <h3 dangerouslySetInnerHTML={{ __html: currentCaption.text }} />
-      </div>
-    )
+    <div className={currentCaption ? "caption" : "caption hide"}>
+      <h3
+        id="caption-text"
+        dangerouslySetInnerHTML={{ __html: currentCaption.text }}
+      />
+    </div>
   );
 };
 

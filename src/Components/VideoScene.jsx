@@ -10,6 +10,7 @@ import {
 } from "react-router-dom";
 import playIcon from "../icons/play.svg";
 import pauseIcon from "../icons/pause.svg";
+import gearIcon from "../icons/gear.svg";
 import fullScreenIcon from "../icons/fullscreen.svg";
 import { requestFullscreen, secondsToTime } from "../Common/commonFuncs";
 import SRTCaptionViewer from "./SRTCaptionViewer";
@@ -18,6 +19,7 @@ import Switch from "react-switch";
 import ReactPlayer from "react-player";
 import SubtitleModal from "./SubtitleModal";
 import MovieLinkModal from "./MovieLinkModal";
+import ConfigsModal from "./ConfigsModal";
 
 export default function VideoScene() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -34,7 +36,6 @@ export default function VideoScene() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [showedTime, setShowedTime] = useState(0);
-  const [keysEnabled, setKeysEnabled] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [cacheAmount, setCacheAmount] = useState(-1);
   const [chooseFromFile, setChooseFromFile] = useState(true);
@@ -51,7 +52,7 @@ export default function VideoScene() {
   const [msgInputFocused, setMsgInputFocused] = useState(false);
   const [msgInput, setMsgInput] = useState("");
   const [msgCounter, setMsgCounter] = useState(5);
-
+  const [showConfigsModal, setShowConfigsModal] = useState(false);
   const handleReloadVideo = () => {
     setVideoKey((prevKey) => prevKey + 1);
   };
@@ -242,13 +243,13 @@ export default function VideoScene() {
   }
 
   const handleToggleFullscreen = () => {
-    if (document.fullscreenElement) {
+    if (isFullScreen) {
       document.exitFullscreen();
       setIsFullScreen(false);
-      return;
+    } else {
+      requestFullscreen("fullscreen-wrapper");
+      setIsFullScreen(true);
     }
-    requestFullscreen("fullscreen-wrapper");
-    setIsFullScreen(true);
   };
   function renderTime() {
     const t1 = secondsToTime(showedTime);
@@ -316,19 +317,18 @@ export default function VideoScene() {
   function handleKeyDown(e) {
     const subDelayRate = 0.5;
     const goToRate = 5;
-    if (keysEnabled) {
-      const { code } = e;
-      console.log(code);
-      if (code === "Space") {
-        handlePlay();
-        setShowControls(!showControls);
-        setMsgInputFocused(!showControls);
-        setShowMsgs(!showControls);
-      } else if (code === "ArrowRight") goToNext(goToRate);
-      else if (code === "ArrowLeft") goToNext(-goToRate);
-      else if (code === "Period") handleSubDelay(subDelayRate);
-      else if (code === "Comma") handleSubDelay(-subDelayRate);
-    }
+
+    const { code } = e;
+    console.log(code);
+    if (code === "Space") {
+      handlePlay();
+      setShowControls(!showControls);
+      setMsgInputFocused(!showControls);
+      setShowMsgs(!showControls);
+    } else if (code === "ArrowRight") goToNext(goToRate);
+    else if (code === "ArrowLeft") goToNext(-goToRate);
+    else if (code === "Period") handleSubDelay(subDelayRate);
+    else if (code === "Comma") handleSubDelay(-subDelayRate);
   }
   function submitMovieSrc() {
     setShowVideo(false);
@@ -454,13 +454,6 @@ export default function VideoScene() {
             onChange={handleSrtChange}
           />
         </div>
-        {/* <div className="key-enable">
-          <label>فعال کردن کیبورد</label>
-          <Switch
-            checked={keysEnabled}
-            onChange={(checked) => setKeysEnabled(checked)}
-          />
-        </div> */}
       </div>
       <div
         id="fullscreen-wrapper"
@@ -518,7 +511,6 @@ export default function VideoScene() {
           >
             <source src={videoSrc} />
           </video>
-
           <div className={showControls ? "controls" : "controls hide"}>
             <div className="control-time-wrapper">
               <h4 className="control-time ">{renderTime()}</h4>
@@ -530,11 +522,21 @@ export default function VideoScene() {
                 className="btn-play icon-sm"
                 src={isPlaying ? pauseIcon : playIcon}
               />
-              <img
-                src={fullScreenIcon}
-                className="img-fluid icon-sm"
-                onClick={handleToggleFullscreen}
-              />
+              <div>
+                {!isFullScreen && (
+                  <img
+                    src={gearIcon}
+                    style={{ marginRight: "1rem" }}
+                    className="img-fluid icon-sm "
+                    onClick={() => setShowConfigsModal(true)}
+                  />
+                )}
+                <img
+                  src={fullScreenIcon}
+                  className="img-fluid icon-sm"
+                  onClick={handleToggleFullscreen}
+                />
+              </div>
             </div>
             <input
               type="range"
@@ -558,14 +560,14 @@ export default function VideoScene() {
               }}
             />
           </div>
-          {srtText && (
-            <SRTCaptionViewer
-              currentTime={currentTime}
-              subDelay={subDelay}
-              videoRef={videoRef}
-              srtText={srtText}
-            />
-          )}
+
+          <SRTCaptionViewer
+            currentTime={currentTime}
+            subDelay={subDelay}
+            videoRef={videoRef}
+            srtText={srtText}
+          />
+
           <SubtitleModal
             show={showSubModal}
             setShow={setShowSubModal}
@@ -585,6 +587,10 @@ export default function VideoScene() {
           />
         </div>
         <ToastContainer className="video-toast" />
+        <ConfigsModal
+          show={showConfigsModal}
+          handleClose={() => setShowConfigsModal(false)}
+        />
       </div>
     </div>
   );

@@ -27,7 +27,7 @@ code {
   height: 100%;
   background: rgb(0, 0, 0);
   background: url("/public/bg.jpg");
-  background-repeat: repeat;
+  background-repeat: round;
 }
 /* html,
 body,
