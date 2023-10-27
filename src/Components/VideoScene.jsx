@@ -1,6 +1,6 @@
 import React from "react";
 import { useState, useRef, useEffect } from "react";
-import { Button } from "react-bootstrap";
+import { Button, Card } from "react-bootstrap";
 import { useSocket } from "../context/socket";
 import {
   useLocation,
@@ -20,6 +20,8 @@ import ReactPlayer from "react-player";
 import SubtitleModal from "./SubtitleModal";
 import MovieLinkModal from "./MovieLinkModal";
 import ConfigsModal from "./ConfigsModal";
+import MovieFrom from "./MovieFrom";
+import Users from "./Users";
 
 export default function VideoScene() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -53,6 +55,7 @@ export default function VideoScene() {
   const [msgInput, setMsgInput] = useState("");
   const [msgCounter, setMsgCounter] = useState(5);
   const [showConfigsModal, setShowConfigsModal] = useState(false);
+  const [currentUsers, setCurrentUsers] = useState([]);
   const handleReloadVideo = () => {
     setVideoKey((prevKey) => prevKey + 1);
   };
@@ -107,13 +110,12 @@ export default function VideoScene() {
       socket.on("connect", () => {
         console.log("connected to server");
         defaultToast("اتصال شما برقرار است");
+        socket.emit("joinRoom", params.roomName, userName);
       });
 
       socket.on("disconnect ", () => {
         defaultToast("اتصال شما قطع شده است");
       });
-
-      socket.emit("joinRoom", params.roomName, userName);
 
       socket.on("time", async (time, t1, playing) => {
         console.log("a user changed time");
@@ -152,7 +154,9 @@ export default function VideoScene() {
         setNewMovieLink(link);
         setShowVideoModal(true);
       });
-
+      socket.on("getUsers", (users) => {
+        setCurrentUsers(users);
+      });
       setInterval(() => {
         if (!socket.connected) defaultToast("اتصال شما قطع شده است");
       }, 10000);
@@ -172,7 +176,7 @@ export default function VideoScene() {
           "movieLink",
           "msg"
         );
-
+        socket.emit("leaveRooms");
         socket.disconnect();
       }
     };
@@ -376,6 +380,7 @@ export default function VideoScene() {
       setMsgInput("");
     }
   }
+
   return (
     <div id="video-page">
       <Button
@@ -385,75 +390,18 @@ export default function VideoScene() {
       >
         بازگشت
       </Button>
-
-      <div className="video-configs">
-        <div className="">
-          <Button
-            className=""
-            onClick={() => {
-              const url = window.location.origin + window.location.pathname;
-              navigator.clipboard.writeText(url);
-              defaultToast("لینک کپی شد");
-            }}
-          >
-            کپی لینک اتاق
-          </Button>
-          <div>
-            <small>این لینک را به دوستان خود بدهید</small>
-          </div>
-        </div>
-        <div className="load-from-wrapper mt-5">
-          <h5>بارگذاری فیلم </h5>
-          <div className="flex-row">
-            <p>از فایل</p>
-            <Switch
-              offColor="#0d6efd"
-              onColor="#0d6efd"
-              uncheckedIcon={false}
-              checkedIcon={false}
-              checked={chooseFromFile}
-              onChange={(checked) => setChooseFromFile(checked)}
-            />
-            <p>از لینک</p>
-          </div>
-        </div>
-        {chooseFromFile && (
-          <div className="mb-3">
-            <label> فایل فیلم</label>
-            <input
-              dir="ltr"
-              type="file"
-              accept="video/*"
-              className="form-control "
-              onChange={(e) => setVideoFile(e.target.files[0])}
-            />
-          </div>
-        )}
-        {!chooseFromFile && (
-          <div className="mb-3">
-            <label> لینک فیلم</label>
-            <input
-              dir="ltr"
-              type="text"
-              placeholder="link"
-              value={link}
-              className="form-control "
-              onChange={(e) => setLink(e.target.value)}
-            />
-          </div>
-        )}
-        <Button variant="primary" className="mb-5" onClick={submitMovieSrc}>
-          ثبت
-        </Button>
-        <div className="mb-4">
-          <label htmlFor="">بارگذاری زیرنویس</label>
-          <input
-            className="form-control "
-            type="file"
-            accept=".srt"
-            onChange={handleSrtChange}
-          />
-        </div>
+      <div className="scene-upper">
+        <MovieFrom
+          defaultToast={defaultToast}
+          chooseFromFile={chooseFromFile}
+          setChooseFromFile={setChooseFromFile}
+          setVideoFile={setVideoFile}
+          link={link}
+          setLink={setLink}
+          submitMovieSrc={submitMovieSrc}
+          handleSrtChange={handleSrtChange}
+        />
+        <Users currentUsers={currentUsers} />
       </div>
       <div
         id="fullscreen-wrapper"

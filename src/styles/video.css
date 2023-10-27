@@ -203,7 +203,31 @@
   align-items: center;
 }
 
+.users {
+  border: 1px solid white;
+  border-radius: 5px;
+  padding: 1rem;
+}
+.users ul {
+  overflow-y: auto;
+  max-height: 400px;
+}
+.scene-upper {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  margin-bottom: 1rem;
+}
+
 @media screen and (max-width: 1024px) {
+  .scene-upper {
+    grid-template-columns: 1fr;
+  }
+  .users {
+    max-height: 200px;
+  }
+  .users ul {
+    max-height: 100px;
+  }
   .not-fullscreen .msg-input,
   .not-fullscreen .messages-wrapper {
     opacity: 0;
