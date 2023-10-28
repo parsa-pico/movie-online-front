@@ -16,7 +16,6 @@ import { requestFullscreen, secondsToTime } from "../Common/commonFuncs";
 import SRTCaptionViewer from "./SRTCaptionViewer";
 import { toast, ToastContainer } from "react-toastify";
 import Switch from "react-switch";
-import ReactPlayer from "react-player";
 import SubtitleModal from "./SubtitleModal";
 import MovieLinkModal from "./MovieLinkModal";
 import ConfigsModal from "./ConfigsModal";
@@ -57,7 +56,8 @@ export default function VideoScene() {
   const [showConfigsModal, setShowConfigsModal] = useState(false);
   const [currentUsers, setCurrentUsers] = useState([]);
   const handleReloadVideo = () => {
-    setVideoKey((prevKey) => prevKey + 1);
+    // setVideoKey((prevKey) => prevKey + 1);
+    videoRef.current.load();
   };
 
   useEffect(() => {
@@ -84,11 +84,14 @@ export default function VideoScene() {
   }, [videoKey]);
 
   useEffect(() => {
-    async function run() {
-      if (isPlaying) videoRef.current.play();
-      else videoRef.current.pause();
+    if (isPlaying) {
+      console.log("is playing");
+      videoRef.current.play();
+    } else {
+      console.log("is not playing");
+      videoRef.current.pause();
     }
-    run();
+    console.log("video ref is paused: ", videoRef.current.paused);
   }, [isPlaying]);
 
   function defaultToast(msg, timeout = 1000) {
@@ -350,6 +353,7 @@ export default function VideoScene() {
       setVideoSrc(videoObjectURL);
     }
     toast("در حال بارگذاری فیلم", { autoClose: 5000 });
+
     handleReloadVideo();
   }
   function handleProgress(event) {
@@ -445,11 +449,12 @@ export default function VideoScene() {
           <video
             id="my-video"
             className={isFullScreen ? "full" : " "}
-            key={videoKey}
+            // key={videoKey}
             ref={videoRef}
             onTimeUpdate={handleTimeUpdate}
             onProgress={handleProgress}
             onLoadedData={(e) => {
+              console.log("on loaded data", e);
               videoRef.current.volume = 1;
               setShowVideo(true);
               const t = secondsToTime(videoRef.current.duration);
