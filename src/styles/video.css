@@ -181,7 +181,6 @@
 }
 
 .msg-input {
-  /* transform: translate(0%, 50%); */
   direction: rtl;
   display: flex;
   flex-direction: row;
@@ -190,7 +189,7 @@
   left: 0;
   opacity: 1;
   transition: all 0.3s;
-  z-index: 1;
+  z-index: 5;
 }
 .msg-hide {
   opacity: 0;

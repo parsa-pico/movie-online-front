@@ -85,8 +85,8 @@ export default function VideoScene() {
 
   useEffect(() => {
     async function run() {
-      if (isPlaying) await videoRef.current.play();
-      else await videoRef.current.pause();
+      if (isPlaying) videoRef.current.play();
+      else videoRef.current.pause();
     }
     run();
   }, [isPlaying]);
