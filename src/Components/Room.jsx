@@ -58,9 +58,10 @@ export default function Room() {
         />
       </div>
       <div className="text-danger room-description mt-1 mb-3">
-        <small>
-          قبل از ورود به اتاق از تنظیم بودن ساعت دستگاه خود مطمئن شوید
-        </small>
+        <ol className="room-warnings">
+          <li>قبل از ورود به اتاق از تنظیم بودن ساعت دستگاه خود مطمئن شوید</li>
+          <li>از آخرین نسخه کروم استفاده کنید</li>
+        </ol>
       </div>
       <Button type="submit" className="w-100 mt-2">
         ساخت اتاق

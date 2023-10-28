@@ -16,3 +16,10 @@
 .room-description {
   align-self: flex-end;
 }
+.room-warnings {
+  direction: rtl;
+  padding: 0;
+}
+.room-warnings li {
+  list-style-type: decimal;
+}
