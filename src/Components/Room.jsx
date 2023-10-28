@@ -22,11 +22,7 @@ export default function Room() {
   return (
     <div id="room-page">
       <h2 className="mb-5"> ساخت اتاق جدید </h2>
-      <div
-        dir="rtl"
-        className="row"
-        style={{ alignItems: "center", alignSelf: "flex-end", width: "100%" }}
-      >
+      <div dir="rtl" className="row input-name-wrapper">
         <div className="col">
           <label style={{ alignSelf: "flex-end" }} htmlFor="userName">
             نام كاربري(فارسي)

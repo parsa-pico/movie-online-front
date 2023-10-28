@@ -23,3 +23,9 @@
 .room-warnings li {
   list-style-type: decimal;
 }
+.input-name-wrapper {
+  align-items: center;
+  align-self: flex-end;
+  width: "100%";
+  margin-bottom: 1rem;
+}
