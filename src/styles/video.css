@@ -109,9 +109,12 @@
 }
 .btn-play {
   cursor: pointer;
-
+  margin: 0 1.5rem;
   filter: invert(97%) sepia(19%) saturate(10%) hue-rotate(336deg)
     brightness(103%) contrast(102%);
+}
+.icon-flipped {
+  transform: rotateZ(180deg);
 }
 .icon-sm {
   width: 30px;
@@ -256,12 +259,18 @@
     width: var(--size);
     height: var(--size);
   }
+  .control-time-wrapper {
+    margin-bottom: 0;
+  }
+  .control-time-wrapper h4 {
+    margin-bottom: 0;
+  }
   .control-time {
     font-size: 1rem;
     margin-bottom: 0.2rem;
   }
   .upper-contorls {
-    margin-bottom: 0.4rem;
+    margin-bottom: 1rem;
   }
   #video-page {
     padding: 3rem 1rem;

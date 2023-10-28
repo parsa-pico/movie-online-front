@@ -12,6 +12,7 @@ import playIcon from "../icons/play.svg";
 import pauseIcon from "../icons/pause.svg";
 import gearIcon from "../icons/gear.svg";
 import fullScreenIcon from "../icons/fullscreen.svg";
+import rightArrowIcon from "../icons/right-arrow.svg";
 import { requestFullscreen, secondsToTime } from "../Common/commonFuncs";
 import SRTCaptionViewer from "./SRTCaptionViewer";
 import { toast, ToastContainer } from "react-toastify";
@@ -23,6 +24,8 @@ import MovieFrom from "./MovieFrom";
 import Users from "./Users";
 
 export default function VideoScene() {
+  const subDelayRate = 0.5;
+  const goToRate = 5;
   const [isMuted, setIsMuted] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
   const params = useParams();
@@ -30,7 +33,7 @@ export default function VideoScene() {
   const nav = useNavigate();
   const location = useLocation();
   const { socket, connectSocket } = useSocket();
-  const [link, setLink] = useState("/test.mkv");
+  const [link, setLink] = useState("");
   const [videoSrc, setVideoSrc] = useState(link);
   const videoRef = useRef(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -62,6 +65,7 @@ export default function VideoScene() {
   };
 
   useEffect(() => {
+    // console.log(msgCounter);
     if (msgCounter > 0)
       setTimeout(() => {
         setMsgCounter(msgCounter - 1);
@@ -74,7 +78,8 @@ export default function VideoScene() {
     }
   }, [msgCounter]);
   useEffect(() => {
-    if (showMsgs && !msgInputFocused) setMsgCounter(5);
+    console.log("show msgs", showMsgs, "msg input focused", msgInputFocused);
+    if (showMsgs && !msgInputFocused && !showControls) setMsgCounter(5);
   }, [showMsgs]);
 
   useEffect(() => {
@@ -86,13 +91,13 @@ export default function VideoScene() {
 
   useEffect(() => {
     if (isPlaying) {
-      console.log("is playing");
+      // console.log("is playing");
       videoRef.current.play();
     } else {
-      console.log("is not playing");
+      // console.log("is not playing");
       videoRef.current.pause();
     }
-    console.log("video ref is paused: ", videoRef.current.paused);
+    // console.log("video ref is paused: ", videoRef.current.paused);
   }, [isPlaying]);
 
   function defaultToast(msg, timeout = 1000) {
@@ -195,6 +200,7 @@ export default function VideoScene() {
     const msgsCopy = [...messages];
     msgsCopy.push(obj);
     setMessages(msgsCopy);
+    setShowMsgs(true);
   }
   useEffect(() => {
     if (socket) socket.on("msg", msgHandler);
@@ -329,15 +335,14 @@ export default function VideoScene() {
     socket.emit("subDelay", totalDelay);
   }
   function handleKeyDown(e) {
-    const subDelayRate = 0.5;
-    const goToRate = 5;
-
-    const { code } = e;
+    const { code, target } = e;
+    if (target.id === "msg-input") return;
     console.log(code);
+
     if (code === "Space") {
       handlePlay();
       setShowControls(!showControls);
-      setMsgInputFocused(!showControls);
+      setMsgInputFocused(false);
       setShowMsgs(!showControls);
     } else if (code === "ArrowRight") goToNext(goToRate);
     else if (code === "ArrowLeft") goToNext(-goToRate);
@@ -353,8 +358,8 @@ export default function VideoScene() {
       const videoObjectURL = URL.createObjectURL(videoFile);
       setVideoSrc(videoObjectURL);
     }
+    setShowMsgs(true);
     toast("در حال بارگذاری فیلم", { autoClose: 5000 });
-
     handleReloadVideo();
   }
   function handleProgress(event) {
@@ -432,6 +437,11 @@ export default function VideoScene() {
               onClick={(e) => {
                 setMsgInputFocused(true);
               }}
+              onKeyDown={(e) => {
+                const { code } = e;
+                console.log(code);
+                if (code === "Enter" || code === "NumpadEnter") sendMsg();
+              }}
               onChange={(e) => {
                 setMsgInput(e.target.value);
               }}
@@ -466,7 +476,7 @@ export default function VideoScene() {
             onClick={(e) => {
               if (e.target.id === "my-video") {
                 setShowControls(!showControls);
-                setMsgInputFocused(!showControls);
+                setMsgInputFocused(false);
                 setShowMsgs(!showControls);
               }
             }}
@@ -479,12 +489,40 @@ export default function VideoScene() {
               <h4>cache:{cacheAmount}s</h4>
             </div>
             <div className="upper-contorls">
-              <img
-                onClick={() => handlePlay()}
-                className="btn-play icon-sm"
-                src={isPlaying ? pauseIcon : playIcon}
-              />
               <div>
+                <img
+                  onClick={() => {
+                    goToNext(-goToRate);
+                  }}
+                  className="icon-sm icon-flipped"
+                  src={rightArrowIcon}
+                />
+                <img
+                  onClick={() => handlePlay()}
+                  className="btn-play icon-sm"
+                  src={isPlaying ? pauseIcon : playIcon}
+                />
+                <img
+                  onClick={() => {
+                    goToNext(goToRate);
+                  }}
+                  className=" icon-sm"
+                  src={rightArrowIcon}
+                />
+              </div>
+              <div>
+                <img
+                  onClick={() => handleSubDelay(-subDelayRate)}
+                  src="/subDelayBackward.png"
+                  className="img-fluid icon-sm "
+                  style={{ marginRight: "1rem" }}
+                />
+                <img
+                  onClick={() => handleSubDelay(subDelayRate)}
+                  src={"/subDelayForward.png"}
+                  className="img-fluid icon-sm"
+                  style={{ marginRight: "1rem" }}
+                />
                 {!isFullScreen && (
                   <img
                     src={gearIcon}
