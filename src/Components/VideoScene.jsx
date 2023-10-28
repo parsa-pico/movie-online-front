@@ -94,17 +94,23 @@ export default function VideoScene() {
   function defaultToast(msg, timeout = 1000) {
     toast(msg, { autoClose: timeout, rtl: true });
   }
+  function getUserName() {
+    let userName = searchParams.get("name");
+    if (userName) return userName;
+    if (!userName) {
+      userName = prompt("لطفا یک نام کاربری دلخواه وارد کنید(به فارسی)");
+      userName = userName.trim();
+      if (userName)
+        window.location =
+          window.location.origin +
+          window.location.pathname +
+          `?name=${userName}`;
+      else window.location = window.location.origin;
+    }
+  }
   useEffect(() => {
     async function run() {
-      let userName = searchParams.get("name");
-      while (!userName) {
-        userName = prompt("لطفا یک نام کاربری دلخواه وارد کنید(به فارسی)");
-        if (userName)
-          window.location =
-            window.location.origin +
-            window.location.pathname +
-            `?name=${userName}`;
-      }
+      const userName = getUserName();
 
       if (socket.disconnected) await connectSocket();
       socket.on("connect", () => {
