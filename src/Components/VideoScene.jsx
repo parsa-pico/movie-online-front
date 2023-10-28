@@ -104,17 +104,16 @@ export default function VideoScene() {
     toast(msg, { autoClose: timeout, rtl: true });
   }
   function getUserName() {
-    let userName = searchParams.get("name");
+    let userName = localStorage.getItem("name");
     if (userName) return userName;
     if (!userName) {
       userName = prompt("لطفا یک نام کاربری دلخواه وارد کنید(به فارسی)");
       userName = userName.trim();
-      if (userName)
-        window.location =
-          window.location.origin +
-          window.location.pathname +
-          `?name=${userName}`;
-      else window.location = window.location.origin;
+      console.log(userName);
+      if (userName) {
+        localStorage.setItem("name", userName);
+        window.location = window.location.origin + window.location.pathname;
+      } else window.location = window.location.origin;
     }
   }
   useEffect(() => {
