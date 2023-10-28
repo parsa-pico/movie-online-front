@@ -23,6 +23,7 @@ import MovieFrom from "./MovieFrom";
 import Users from "./Users";
 
 export default function VideoScene() {
+  const [isMuted, setIsMuted] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
   const params = useParams();
   const [srtText, setSrtText] = useState(null);
@@ -447,8 +448,7 @@ export default function VideoScene() {
             {renderMsg()}
           </div>
           <video
-            autoPlay
-            muted
+            muted={isMuted}
             id="my-video"
             className={isFullScreen ? "full" : " "}
             // key={videoKey}
@@ -457,7 +457,7 @@ export default function VideoScene() {
             onProgress={handleProgress}
             onLoadedData={(e) => {
               console.log("on loaded data", e);
-              videoRef.current.muted = false;
+              setIsMuted(false);
               videoRef.current.volume = 1;
               setShowVideo(true);
               const t = secondsToTime(videoRef.current.duration);
