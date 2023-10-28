@@ -447,6 +447,8 @@ export default function VideoScene() {
             {renderMsg()}
           </div>
           <video
+            autoPlay
+            muted
             id="my-video"
             className={isFullScreen ? "full" : " "}
             // key={videoKey}
@@ -455,6 +457,7 @@ export default function VideoScene() {
             onProgress={handleProgress}
             onLoadedData={(e) => {
               console.log("on loaded data", e);
+              videoRef.current.muted = false;
               videoRef.current.volume = 1;
               setShowVideo(true);
               const t = secondsToTime(videoRef.current.duration);
