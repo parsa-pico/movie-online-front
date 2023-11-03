@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import VideoScene from "./Components/VideoScene";
 import Room from "./Components/Room";
 import { useSocket } from "./context/socket";
+import Test from "./Components/Test";
 
 function App() {
   const loc = useLocation();
@@ -27,8 +28,10 @@ function App() {
   return (
     <div className="App">
       <Routes>
-        <Route path="/" exact element={<Room />} />
-        <Route path="/:roomName" exact element={<VideoScene />} />
+        <Route path="/" exact element={<Navigate to={"/room"} />} />
+        <Route path="/room" exact element={<Room />} />
+        <Route path="/room/:roomName" exact element={<VideoScene />} />
+        <Route path="/test" exact element={<Test />} />
       </Routes>
     </div>
   );

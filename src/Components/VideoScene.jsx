@@ -284,6 +284,7 @@ export default function VideoScene() {
       handleReloadVideo();
       toast("در حال بارگذاری فیلم", { autoClose: 5000 });
       setShowVideoModal(false);
+      setChooseFromFile(false);
     } catch (error) {
       console.log(error);
       alert("لینک ارسالی اشکال دارد");

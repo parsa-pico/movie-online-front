@@ -57,7 +57,7 @@ export default function Room() {
       <Button
         onClick={() => {
           socket.emit("createRoom", (id) => {
-            window.location = `/${id}`;
+            window.location = `/room/${id}`;
           });
         }}
         type="submit"

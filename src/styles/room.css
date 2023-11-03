@@ -29,3 +29,9 @@
   width: "100%";
   margin-bottom: 1rem;
 }
+
+@media screen and(max-width:1024px) {
+  #room-page {
+    padding: 25vh 10vw;
+  }
+}
