@@ -13,15 +13,20 @@
   align-self: flex-end;
   margin: 1rem 0;
 }
+
 .room-description {
   align-self: flex-end;
+  background-color: rgb(177, 74, 74);
+  color: white;
+  border-radius: 5px;
+  padding: 1rem;
 }
 .room-warnings {
   direction: rtl;
   padding: 0;
 }
 .room-warnings li {
-  list-style-type: decimal;
+  list-style-type: none;
 }
 .input-name-wrapper {
   align-items: center;
@@ -30,7 +35,7 @@
   margin-bottom: 1rem;
 }
 
-@media screen and(max-width:1024px) {
+@media screen and (max-width: 1024px) {
   #room-page {
     padding: 25vh 10vw;
   }

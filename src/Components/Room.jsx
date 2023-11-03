@@ -47,11 +47,13 @@ export default function Room() {
           </Button>
         </div>
       </div>
-      <div className="text-danger  room-description mt-1 mb-3">
-        <ol className="room-warnings">
-          <li>قبل از ورود به اتاق از تنظیم بودن ساعت دستگاه خود مطمئن شوید</li>
-          <li>از آخرین نسخه کروم استفاده کنید</li>
-          <li>اگر از برنامه ویس کال استفاده میکنید،از دیسکورد استفاده کنید</li>
+      <div className="room-description mt-1 mb-3">
+        <ol className="room-warnings ">
+          <li>-قبل از ورود به اتاق از تنظیم بودن ساعت دستگاه خود مطمئن شوید</li>
+          <br />
+          <li>-از آخرین نسخه کروم استفاده کنید</li>
+          <br />
+          <li>-اگر از برنامه ویس کال استفاده میکنید،از دیسکورد استفاده کنید</li>
         </ol>
       </div>
       <Button
